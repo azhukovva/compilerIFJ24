@@ -1,7 +1,7 @@
 /**
  * @file scanner.h
  * IFJ24 Compiler
- * 
+ *
  * @author Aryna Zhukava (xzhuka01)
  * @brief Header file for scanner.
  */
@@ -17,10 +17,12 @@
 #include "error.h"
 
 #define KEYWORD_CMP_ERR 99
+#define MAX_TOKEN_LENGHT 100 // Random:)
 
 typedef enum
 {
     TOKEN_EMPTY,
+    TOKEN_UNDERLINE,
     TOKEN_KEYWORD,
     TOKEN_IDENTIFIER_FUNC,
     TOKEN_IDENTIFIER_VAR,
@@ -39,6 +41,7 @@ typedef enum
     TOKEN_RIGHT_BRACKET,
     TOKEN_LEFT_BRACE,
     TOKEN_RIGHT_BRACE,
+    TOKEN_ARROW,
     TOKEN_COMMA,
     TOKEN_COLON,
     TOKEN_SEMICOLON,
@@ -52,50 +55,51 @@ typedef enum
     TOKEN_OPTIONAL_TYPE,
 } TokenType;
 
-char * tokenName[] = {
-    "tStringType", "tStringTypeNil", 
-    "tIntType", "tIntTypeNil",
-    "tDoubleType", "tDoubleTypeNil",
-    "tInt", 
-    "tFloat", 
-    "tExp", 
+char *tokenName[] = {
+    "tStringType",
+    "tStringTypeNil",
+    "tIntType",
+    "tIntTypeNil",
+    "tDoubleType",
+    "tDoubleTypeNil",
+    "tInt",
+    "tFloat",
+    "tExp",
     "tFloatExp",
-    "tLiter", 
-    "tFunc", 
-    "tRetFunc",
-    "tIdent", 
+    "tLiter",
+    "tFn",
+    "tIdent",
     "tUnderline",
-    "tAdd", 
-    "tSub", "tMul", 
+    "tAdd",
+    "tSub",
+    "tMul",
     "tDiv",
     "tPlus",
-    "tMinus", 
-    "tAssign", 
+    "tMinus",
+    "tAssign",
     "tEqual",
-    "tBrLeft", 
-    "tBrRight", 
-    "tMore", 
+    "tBrLeft",
+    "tBrRight",
+    "tMore",
     "tNil",
     "tVoid",
     "tMoreOrEqual",
-    "tLess", 
-    "tLessOrEqual", 
+    "tLess",
+    "tLessOrEqual",
     "tNotEqual",
-    "tExclam", 
+    "tExclam",
     "tDoubleQuestion",
-    "tSemicolon", 
+    "tSemicolon",
     "tComma",
-    "tColon", 
-    "tReturn", 
-    "tIf", 
+    "tColon",
+    "tReturn",
+    "tIf",
     "tElse",
-    "tWhile", 
-    "tVar", "tLet", 
-    "tRemainder",
-    "tCommBlock", 
-    "tCommLine", 
-    "tCommInside",
-    "tLCurl", 
+    "tWhile",
+    "tVar",
+    "tLet",
+    "tCommLine",
+    "tLCurl",
     "tRCurl",
     "tEOF",
     "tArrow",
@@ -118,12 +122,44 @@ typedef enum
     KW_WHILE,
 } KeywordType;
 
+typedef enum
+{
+    sStart,
+    sFn, // function
+    // States for num
+    sInt,
+    sFloat,
+    sFloat1, // state after dot, need to check if there is a digit after
+    sFloatExp,
+    sFloatExp1, // anything other than a digit or +/- after e/E -> error
+    sFloatExp2, // anything other than a digit -> error
+    sFloatExpFinal,
+    sExp1,
+    sExp2,
+    // States for string
+    sLiter,
+    sLiterContent,
+    sEsc,
+    sHex,
+    sHexContent,
+    // States for comments
+    sCommLine,
+    // Other
+    sUnderline,
+    sIdent,
+    sQuestion
+} ScannerState;
+
 typedef struct
 {
     TokenType type;
     char *value;
 } Token;
 
+/**
+ *@brief Function to initialize token
+ *@return Pointer to the initialized token
+ */
 Token *init_token();
 
 /**
@@ -164,8 +200,8 @@ void error_handler(int error, Token *token);
  * @brief Convert escape sequences in a string to their corresponding characters
  * @param dec The escape sequence to convert
  * @param token The token to handle errors with
- * @return The character corresponding to the escape sequence 
+ * @return The character corresponding to the escape sequence
  */
-char escapeSequence(char* dec, Token *token);
+char escapeSequence(char *dec, Token *token);
 
 #endif
