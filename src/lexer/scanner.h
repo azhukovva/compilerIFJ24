@@ -23,13 +23,14 @@ typedef enum
 {
     TOKEN_EMPTY,
     TOKEN_UNDERLINE,
-    TOKEN_KEYWORD,
+    TOKEN_IDENTIFIER,
     TOKEN_IDENTIFIER_FUNC,
-    TOKEN_IDENTIFIER_VAR,
     TOKEN_INT,
+    TOKEN_INT_EXP,
     TOKEN_FLOAT,
+    TOKEN_FLOAT_EXP,
+    TOKEN_COMMENT,
     TOKEN_STRING,
-    TOKEN_NULL,
     TOKEN_EOF,
     // Operators
     TOKEN_PLUS,
@@ -53,6 +54,20 @@ typedef enum
     TOKEN_ASSIGN,
     TOKEN_NOT_EQUAL,
     TOKEN_OPTIONAL_TYPE,
+    // KEYWORDS
+    TOKEN_VAR,
+    TOKEN_ELSE,
+    TOKEN_FN,
+    TOKEN_IF,
+    TOKEN_I32,
+    TOKEN_F64,
+    TOKEN_PUB,
+    TOKEN_RETURN,
+    TOKEN_U8,
+    TOKEN_VOID,
+    TOKEN_WHILE,
+    TOKEN_CONST,
+    TOKEN_NULL,
 } TokenType;
 
 char *tokenName[] = {
@@ -128,14 +143,17 @@ typedef enum
     sFn, // function
     // States for num
     sInt,
+
     sFloat,
     sFloat1, // state after dot, need to check if there is a digit after
     sFloatExp,
     sFloatExp1, // anything other than a digit or +/- after e/E -> error
     sFloatExp2, // anything other than a digit -> error
     sFloatExpFinal,
+
     sExp1,
     sExp2,
+    sExp,
     // States for string
     sLiter,
     sLiterContent,

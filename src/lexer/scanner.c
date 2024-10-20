@@ -86,31 +86,31 @@ TokenType is_keyword(char *c)
             switch (i)
             {
             case 0:
-                return KW_CONST;
+                return TOKEN_CONST;
             case 1:
-                return KW_ELSE;
+                return TOKEN_ELSE;
             case 2:
-                return KW_FN;
+                return TOKEN_FN;
             case 3:
-                return KW_IF;
+                return TOKEN_IF;
             case 4:
-                return KW_I32;
+                return TOKEN_I32;
             case 5:
-                return KW_F64;
+                return TOKEN_F64;
             case 6:
-                return KW_NULL;
+                return TOKEN_NULL;
             case 7:
-                return KW_PUB;
+                return TOKEN_PUB;
             case 8:
-                return KW_RETURN;
+                return TOKEN_RETURN;
             case 9:
-                return KW_U8;
+                return TOKEN_U8;
             case 10:
-                return KW_VAR;
+                return TOKEN_VAR;
             case 11:
-                return KW_VOID;
+                return TOKEN_VOID;
             case 12:
-                return KW_WHILE;
+                return TOKEN_WHILE;
             }
         }
     }
@@ -349,6 +349,208 @@ void get_token(Token *token)
                 break;
             }
             break;
+
+        case sInt:
+            while (is_digit(c))
+            {
+                token->type = TOKEN_INT;
+                append_string(&str, c);
+                c = read_char(stdin);
+            }
+            if (c == '.')
+            {
+                state = sFloat;
+                append_string(&str, c);
+                break;
+            }
+            if (c == 'e' || c == 'E')
+            { // get 'e' so it CAN BE number with exponential
+                state = sExp1;
+                string_Append(&str, c);
+                break;
+            }
+            else
+            {
+                if (!is_digit(c)) // REVIEW
+                    error_handler(ERR_LEX, token);
+                token->type = TOKEN_INT;
+                token->value = str.str;
+                isToken = true;
+                ungetc(c, stdin);
+                break;
+            }
+            break;
+
+        case sFloat:
+            while (is_digit(c))
+            {
+                string_Append(&str, c);
+                c = read_char(stdin);
+            }
+
+            if (c == 'e' || c == 'E')
+            { // move to case with Exponential
+                string_Append(&str, c);
+                state = sFloatExp1;
+                break;
+            }
+
+            else
+            {
+                token->type = TOKEN_FLOAT; // get token of float number
+                token->value = str.str;
+                isToken = true;
+                ungetc(c, stdin);
+                break;
+            }
+
+        case sFloatExp1:
+            if (c == '+' || c == '-')
+            {
+                string_Append(&str, c);
+                state = sFloatExp2;
+                break;
+            }
+            else if (is_digit(c))
+            {
+                string_Append(&str, c);
+                state = sFloatExp;
+                break;
+            }
+            else
+                error_handler(ERR_LEX, token);
+            break;
+
+        case sFloatExp2:
+            if (is_digit(c))
+            {
+                string_Append(&str, c);
+                state = sFloatExp;
+                break;
+            }
+            else
+                error_handler(ERR_LEX, token);
+            break;
+
+        case sFloatExp:
+            while (is_digit(c))
+            {
+                string_Append(&str, c);
+                c = read_char(stdin);
+            }
+            token->type = TOKEN_FLOAT_EXP; // get exponential number with float main part
+            token->value = str.str;
+            isToken = true;
+            ungetc(c, stdin);
+            break;
+            break;
+
+        case sExp1:
+            if (c == '+' || c == '-')
+            { // get '+'|'-' so we need to check if the next char is number in sExp2 state
+                state = sExp2;
+                string_Append(&str, c);
+                break;
+            }
+            else if (is_digit(c))
+            {
+                state = sExp;
+                string_Append(&str, c);
+                break;
+            }
+            else
+                error_handler(ERR_LEX, token);
+
+            break;
+
+        case sExp2:
+            if (is_digit(c))
+            {
+                state = sExp;
+                string_Append(&str, c);
+                break;
+            }
+            else
+                error_handler(ERR_LEX, token);
+            break;
+
+        case sExp:
+            while (is_digit(c))
+            {
+                string_Append(&str, c);
+                c = read_char(stdin);
+            }
+            token->type = TOKEN_INT_EXP;
+            token->value = str.str;
+            isToken = true;
+            ungetc(c, stdin);
+            break;
+
+        case sIdent:
+            while (is_letter(c) || is_digit(c) || c == '_')
+            {
+                append_string(&str, c);
+                c = read_char(stdin);
+            }
+            ungetc(c, stdin);
+            token->value = str.str;
+            token->type = is_keyword(str.str);
+            if (token->type == KEYWORD_CMP_ERR)
+                token->type = TOKEN_IDENTIFIER; // identificator isn't a keyword
+            isToken = true;
+            break;
+
+        case sEsc:
+            if (c == 'x')
+            {
+                state = sHex;
+                break;
+            }
+            else if (c == '"' || c == 'n' || c == 'r' || c == 't' || c == '\\')
+            {
+                state = sLiterContent;
+                string_Append(&str, c);
+                break;
+            }
+            else
+                error_handler(ERR_LEX, token);
+            break;
+        case sHex:
+            if (c == '{')
+            {
+                state = sHexContent;
+                break;
+            }
+            else
+                error_handler(ERR_LEX, token);
+            break;
+        case sHexContent:
+            while (c != '}')
+            {
+                if (is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
+                {
+                    string_Append(&str, c);
+                    c = read_char(stdin);
+                }
+                else
+                    error_handler(ERR_LEX, token);
+            }
+
+        case sCommLine:
+            while (c >= 32 || isspace(c) && c != '\n' && c != EOF)
+            { // wait for EOF to complete the comment
+                string_Append(&str, c);
+                c = read_char(stdin);
+            }
+            if (c == '\n' || c == EOF)
+            { // got EOF
+                token->type = TOKEN_COMMENT;
+                token->value = str.str;
+                isToken = true;
+                break;
+            }
+            break;
+            // TODO - add multiline comments
         }
     }
 }
