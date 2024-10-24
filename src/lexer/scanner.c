@@ -171,7 +171,7 @@ void get_token(Token *token)
             }
             if (is_digit(c))
             {
-                state = sInt;
+                state = sLiter_Int;
                 append_string(&str, c);
                 break;
             }
@@ -329,7 +329,45 @@ void get_token(Token *token)
                 case '?':
                     state = sQuestion;
                     c = read_char(stdin);
-                    // ... ? can '?' be single token?
+                    if (c == "i")
+                    {
+                        if (match_string("32", stdin))
+                        {
+                            token->type = TOKEN_I32_OPT;
+                            token->value = "?i32";
+                            isToken = true;
+                            break;
+                        }
+                        else
+                            error_handler(ERR_LEX, token);
+                    }
+                    else if (c == "f")
+                    {
+                        if (match_string("64", stdin))
+                        {
+                            token->type = TOKEN_F64_OPT;
+                            token->value = "?f64";
+                            isToken = true;
+                            break;
+                        }
+                        else
+                            error_handler(ERR_LEX, token);
+                    }
+                    else if (c == "[")
+                    {
+                        if (match_string("]u8", stdin))
+                        {
+                            token->type = TOKEN_U8_OPT;
+                            token->value = "?[]u8";
+                            isToken = true;
+                        }
+                        else
+                            error_handler(ERR_LEX, token);
+                    }
+                    else
+                        error_handler(ERR_LEX, token);
+                    // REVIEW
+                    //  ... ? can '?' be single token?
                     token->type = TOKEN_OPTIONAL_TYPE;
                     token->value = "?";
                     isToken = true;
@@ -350,7 +388,7 @@ void get_token(Token *token)
             }
             break;
 
-        case sInt:
+        case sLiter_Int:
             while (is_digit(c))
             {
                 token->type = TOKEN_INT;
@@ -359,19 +397,19 @@ void get_token(Token *token)
             }
             if (c == '.')
             {
-                state = sFloat;
+                state = sLiter_Float;
                 append_string(&str, c);
                 break;
             }
             if (c == 'e' || c == 'E')
             { // get 'e' so it CAN BE number with exponential
-                state = sExp1;
+                state = sExp;
                 string_Append(&str, c);
                 break;
             }
             else
             {
-                if (!is_digit(c)) // REVIEW
+                if (!is_digit(c) && c > 32) // REVIEW
                     error_handler(ERR_LEX, token);
                 token->type = TOKEN_INT;
                 token->value = str.str;
@@ -381,20 +419,21 @@ void get_token(Token *token)
             }
             break;
 
-        case sFloat:
+        case sLiter_Float:
             while (is_digit(c))
             {
                 string_Append(&str, c);
                 c = read_char(stdin);
             }
-
             if (c == 'e' || c == 'E')
             { // move to case with Exponential
                 string_Append(&str, c);
-                state = sFloatExp1;
+                state = sFloat_Exp; // sFloat_Exp
                 break;
             }
-
+            // if is not a digit and not a whitespace/control character, it's an error
+            else if (!is_digit(c) && c > 32)
+                error_handler(ERR_LEX, token);
             else
             {
                 token->type = TOKEN_FLOAT; // get token of float number
@@ -404,39 +443,44 @@ void get_token(Token *token)
                 break;
             }
 
-        case sFloatExp1:
+        case sFloat_Exp: // sFloat_Exp
             if (c == '+' || c == '-')
             {
                 string_Append(&str, c);
-                state = sFloatExp2;
+                state = sFloat_Exp_Char;
                 break;
             }
             else if (is_digit(c))
             {
                 string_Append(&str, c);
-                state = sFloatExp;
+                state = sFloat_Exp_Final;
                 break;
             }
             else
                 error_handler(ERR_LEX, token);
             break;
 
-        case sFloatExp2:
+        case sFloat_Exp_Char:
             if (is_digit(c))
             {
                 string_Append(&str, c);
-                state = sFloatExp;
+                state = sFloat_Exp_Final;
                 break;
             }
             else
                 error_handler(ERR_LEX, token);
             break;
 
-        case sFloatExp:
+        case sFloat_Exp_Final:
             while (is_digit(c))
             {
                 string_Append(&str, c);
                 c = read_char(stdin);
+            }
+            if (c > 32 && !is_digit(c))
+            {
+                error_handler(ERR_LEX, token);
+                break;
             }
             token->type = TOKEN_FLOAT_EXP; // get exponential number with float main part
             token->value = str.str;
@@ -445,16 +489,16 @@ void get_token(Token *token)
             break;
             break;
 
-        case sExp1:
+        case sExp:
             if (c == '+' || c == '-')
             { // get '+'|'-' so we need to check if the next char is number in sExp2 state
-                state = sExp2;
+                state = sExp_Char;
                 string_Append(&str, c);
                 break;
             }
             else if (is_digit(c))
             {
-                state = sExp;
+                state = sExp_Final;
                 string_Append(&str, c);
                 break;
             }
@@ -463,10 +507,10 @@ void get_token(Token *token)
 
             break;
 
-        case sExp2:
+        case sExp_Char:
             if (is_digit(c))
             {
-                state = sExp;
+                state = sExp_Final;
                 string_Append(&str, c);
                 break;
             }
@@ -474,7 +518,7 @@ void get_token(Token *token)
                 error_handler(ERR_LEX, token);
             break;
 
-        case sExp:
+        case sExp_Final:
             while (is_digit(c))
             {
                 string_Append(&str, c);
@@ -498,6 +542,39 @@ void get_token(Token *token)
             if (token->type == KEYWORD_CMP_ERR)
                 token->type = TOKEN_IDENTIFIER; // identificator isn't a keyword
             isToken = true;
+            break;
+
+            // REVIEW
+        case sLiter:
+            c = read_char(stdin);
+            while (c != '"' && c != EOF)
+            {
+                if (c == '\\') // Handle escape sequences
+                {
+                    state = sEsc;
+                    break;
+                }
+                else if (c > 31) // Directly append valid characters
+                {
+                    string_Append(&str, c);
+                }
+                else
+                {
+                    error_handler(ERR_LEX, token);
+                    break;
+                }
+                c = read_char(stdin);
+            }
+            if (c == '"')
+            {
+                token->type = TOKEN_STRING;
+                token->value = str.str;
+                isToken = true;
+            }
+            else // EOF reached without closing quote
+            {
+                error_handler(ERR_LEX, token);
+            }
             break;
 
         case sEsc:

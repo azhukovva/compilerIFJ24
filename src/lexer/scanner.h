@@ -59,11 +59,16 @@ typedef enum
     TOKEN_ELSE,
     TOKEN_FN,
     TOKEN_IF,
+    // DATA TYPES
     TOKEN_I32,
+    TOKEN_I32_OPT,
     TOKEN_F64,
+    TOKEN_F64_OPT,
+    TOKEN_U8,
+    TOKEN_U8_OPT,
+
     TOKEN_PUB,
     TOKEN_RETURN,
-    TOKEN_U8,
     TOKEN_VOID,
     TOKEN_WHILE,
     TOKEN_CONST,
@@ -142,18 +147,17 @@ typedef enum
     sStart,
     sFn, // function
     // States for num
-    sInt,
+    sLiter_Int,
 
-    sFloat,
-    sFloat1, // state after dot, need to check if there is a digit after
-    sFloatExp,
-    sFloatExp1, // anything other than a digit or +/- after e/E -> error
-    sFloatExp2, // anything other than a digit -> error
-    sFloatExpFinal,
+    sLiter_Float,     // state after dot, need to check if there is a digit after
 
-    sExp1,
-    sExp2,
+    sFloat_Exp,       // anything other than a digit or +/- after e/E -> error
+    sFloat_Exp_Char,  // anything other than a digit -> error
+    sFloat_Exp_Final, // anything other than a digit -> error
+
     sExp,
+    sExp_Char,
+    sExp_Final,
     // States for string
     sLiter,
     sLiterContent,
