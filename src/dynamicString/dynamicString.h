@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "error.h"
+#include "../errors/error.h"
 
 typedef struct
 {
