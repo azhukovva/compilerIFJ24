@@ -177,6 +177,7 @@ typedef struct
 {
     TokenType type;
     char *value;
+	//TODO uint line , uint column
 } Token;
 
 /**

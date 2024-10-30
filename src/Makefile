@@ -19,7 +19,7 @@ OBJS = $(SRCS:.c=.o)
 EXEC = scanner
 
 # Default target
-all: $(EXEC)
+all: clean $(EXEC)
 
 # Link the executable
 $(EXEC): $(OBJS)

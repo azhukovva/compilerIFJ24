@@ -1,1 +1,1 @@
-var x
+pub func a

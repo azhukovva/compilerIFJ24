@@ -1,4 +1,7 @@
-*.o
-scanner
+src/dynamicString/*.o
+src/lexer/*.o
+src/parser/*.o
+src/errors/*.o
+src/scanner
 .idea/
 .vscode/
