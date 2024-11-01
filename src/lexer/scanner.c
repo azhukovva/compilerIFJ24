@@ -15,22 +15,51 @@
 #define SCANNER_C
 
 #include "scanner.h"
-#include "../dynamicString/dynamicString.h"
 
-/* * * * * * * * * * * * * * * * * * * * * * * * *
- *
- * HELPER FUNCTIONS for scanner
- *
- */
-/**
- * @brief Function to read a character from a file
- * @param file The file to read from
- * @return The character read from the file
- */
-char read_char(FILE *file)
+/* * * * * * * * * * * * * * * * * * * * * * * * */
+
+// List of all possible keywords
+char *keyword[] = {"const", "else", "fn", "if", "i32", "f64", "null", "pub", "return", "u8", "var", "void", "while"};
+
+TokenType is_keyword(char *s) // func to check if Ident is Keyword
 {
-    char c = fgetc(file);
-    return c;
+    for (int i = 0; i < 11; i++)
+    {
+        if (strcmp(s, keyword[i]) == 0)
+        {
+            switch (i)
+            {
+            case 0:
+                return TOKEN_CONST;
+            case 1:
+                return TOKEN_ELSE;
+            case 2:
+                return TOKEN_FN;
+            case 3:
+                return TOKEN_IF;
+            case 4:
+                return TOKEN_I32;
+            case 5:
+                return TOKEN_F64;
+            case 6:
+                return TOKEN_NULL;
+            case 7:
+                return TOKEN_PUB;
+            case 8:
+                return TOKEN_RETURN;
+            case 9:
+                return TOKEN_U8;
+            case 10:
+                printf("var\n");
+                return TOKEN_VAR;
+            case 11:
+                return TOKEN_VOID;
+            case 12:
+                return TOKEN_WHILE;
+            }
+        }
+    }
+    return KEYWORD_CMP_ERR;
 }
 
 Token *init_token()
@@ -72,61 +101,15 @@ void error_handler(int error, Token *token)
     free_token(token);
     error_exit(error);
 }
-/* * * * * * * * * * * * * * * * * * * * * * * * */
 
-// List of all possible keywords
-char *keyword[] = {"const", "else", "fn", "if", "i32", "f64", "null", "pub", "return", "u8", "var", "void", "while"};
-
-TokenType is_keyword(char *c)
-{
-    for (int i = 0; i < 13; i++)
-    {
-        if (strcmp(c, keyword[i]) == 0)
-        {
-            switch (i)
-            {
-            case 0:
-                return TOKEN_CONST;
-            case 1:
-                return TOKEN_ELSE;
-            case 2:
-                return TOKEN_FN;
-            case 3:
-                return TOKEN_IF;
-            case 4:
-                return TOKEN_I32;
-            case 5:
-                return TOKEN_F64;
-            case 6:
-                return TOKEN_NULL;
-            case 7:
-                return TOKEN_PUB;
-            case 8:
-                return TOKEN_RETURN;
-            case 9:
-                return TOKEN_U8;
-            case 10:
-                return TOKEN_VAR;
-            case 11:
-                return TOKEN_VOID;
-            case 12:
-                return TOKEN_WHILE;
-            }
-        }
-    }
-    // If c doesn't match any keyword
-    return KEYWORD_CMP_ERR;
-}
-
-bool is_letter(char c)
+bool is_letter(char c) // check if char is letter
 {
     if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
         return true;
-    else
-        return false;
+    return false;
 }
 
-bool is_digit(char c)
+bool is_digit(char c) // check if char is number
 {
     if (c >= '0' && c <= '9')
         return true;
@@ -134,22 +117,10 @@ bool is_digit(char c)
         return false;
 }
 
-int match_string(const char *str, FILE *input)
+char read_char(FILE *fp)
 {
-    int len = strlen(str);
-    for (int i = 0; i < len; i++)
-    {
-        int c = fgetc(input);
-        if (c == EOF || c != str[i])
-        {
-            for (int j = i; j >= 0; j--)
-            {
-                ungetc(str[j], input);
-            }
-            return 0;
-        }
-    }
-    return 1;
+    char c = fgetc(fp);
+    return c;
 }
 
 char escapeSequence(char *dec, Token *token)
@@ -168,16 +139,41 @@ char escapeSequence(char *dec, Token *token)
     return 0;
 }
 
+char *hex_to_decimal(char *hex)
+{
+    int len = strlen(hex);
+    int base = 1;
+    int dec_val = 0;
+    for (int i = len - 1; i >= 0; i--)
+    {
+        if (hex[i] >= '0' && hex[i] <= '9')
+        {
+            dec_val += (hex[i] - 48) * base;
+            base = base * 16;
+        }
+        else if (hex[i] >= 'A' && hex[i] <= 'F')
+        {
+            dec_val += (hex[i] - 55) * base;
+            base = base * 16;
+        }
+    }
+    char *out = malloc(sizeof(char) * 10);
+    sprintf(out, "%d", dec_val);
+    return out;
+}
+
 void get_token(Token *token)
 {
     char c;
     dynamicString str;
-    init_string(&str, MAX_TOKEN_LENGHT); // String of size 100
-    bool isToken = false;                // Will indicate if we returned a token
-    ScannerState state = sStart;         // Initial
-    while (isToken == false)
-    {
+    init_string(&str, 0);
+    ScannerState state = sStart;
+    int isToken = 0;
+    while (isToken == 0)
+    { // isToken = 1 mean, that we've returned token
         c = read_char(stdin);
+        char hex[8];
+        int idx = 0;
         switch (state)
         {
         case sStart:
@@ -197,24 +193,29 @@ void get_token(Token *token)
             {
                 switch (c)
                 {
+                case ',':
+                    token->type = TOKEN_COMMA;
+                    token->value = ",";
+                    isToken = 1;
+                    break;
                 case '_':
                     append_string(&str, c);
-                    c = read_char(stdin); // Check next character
+                    c = read_char(stdin);
                     if (is_letter(c) || is_digit(c))
                     {
                         state = sIdent;
                         append_string(&str, c);
                         break;
                     }
-                    ungetc(c, stdin); // Not a letter or a digit -> get back, is not identifier and should be processed separately
+                    ungetc(c, stdin);
                     token->type = TOKEN_UNDERLINE;
                     token->value = "_";
-                    isToken = true;
+                    isToken = 1;
                     break;
                 case '+':
                     token->type = TOKEN_PLUS;
                     token->value = "+";
-                    isToken = true;
+                    isToken = 1;
                     break;
                 case '-':
                     append_string(&str, c);
@@ -224,81 +225,33 @@ void get_token(Token *token)
                         append_string(&str, c);
                         token->type = TOKEN_ARROW;
                         token->value = str.str;
-                        isToken = true;
-                        break;
-                    }
-                    ungetc(c, stdin); // Is a single character, so get back
-                    token->type = TOKEN_MINUS;
-                    token->value = "-";
-                    isToken = true;
-                    break;
-                case '*':
-                    token->type = TOKEN_MULTIPLY;
-                    token->value = "*";
-                    isToken = true;
-                    break;
-                case '/':
-                    c = read_char(stdin);
-                    if (c == '/')
-                    {
-                        state = sCommLine;
+                        isToken = 1;
                         break;
                     }
                     ungetc(c, stdin);
-                    token->type = TOKEN_DIVIDE;
-                    token->value = "/";
-                    isToken = true;
+                    token->type = TOKEN_MINUS;
+                    token->value = "-";
+                    isToken = 1;
                     break;
-                // Brackets
                 case '(':
                     token->type = TOKEN_LEFT_BRACKET;
                     token->value = "(";
-                    isToken = true;
+                    isToken = 1;
                     break;
                 case ')':
                     token->type = TOKEN_RIGHT_BRACKET;
                     token->value = ")";
-                    isToken = true;
+                    isToken = 1;
                     break;
                 case '{':
                     token->type = TOKEN_LEFT_BRACE;
                     token->value = "{";
-                    isToken = true;
+                    isToken = 1;
                     break;
                 case '}':
                     token->type = TOKEN_RIGHT_BRACE;
                     token->value = "}";
-                    isToken = true;
-                    break;
-
-                case ',':
-                    token->type = TOKEN_COMMA;
-                    token->value = ",";
-                    isToken = true;
-                    break;
-                case ':':
-                    token->type = TOKEN_COLON;
-                    token->value = ":";
-                    isToken = true;
-                    break;
-                case ';':
-                    token->type = TOKEN_SEMICOLON;
-                    token->value = ";";
-                    isToken = true;
-                    break;
-                case '<':
-                    c = read_char(stdin);
-                    if (c == '=')
-                    {
-                        token->type = TOKEN_LESS_EQUAL;
-                        token->value = "<=";
-                        isToken = true;
-                        break;
-                    }
-                    ungetc(c, stdin);
-                    token->type = TOKEN_LESS_THAN;
-                    token->value = "<";
-                    isToken = true;
+                    isToken = 1;
                     break;
                 case '>':
                     c = read_char(stdin);
@@ -306,13 +259,67 @@ void get_token(Token *token)
                     {
                         token->type = TOKEN_GREATER_EQUAL;
                         token->value = ">=";
-                        isToken = true;
+                        isToken = 1;
                         break;
                     }
                     ungetc(c, stdin);
                     token->type = TOKEN_GREATER_THAN;
                     token->value = ">";
-                    isToken = true;
+                    isToken = 1;
+                    break;
+                case '<':
+                    c = read_char(stdin);
+                    if (c == '=')
+                    {
+                        token->type = TOKEN_LESS_EQUAL;
+                        token->value = "<=";
+                        isToken = 1;
+                        break;
+                    }
+                    ungetc(c, stdin);
+                    token->type = TOKEN_LESS_THAN;
+                    token->value = "<";
+                    isToken = 1;
+                    break;
+                case ';':
+                    token->type = TOKEN_SEMICOLON;
+                    token->value = ";";
+                    isToken = 1;
+                    break;
+                case ':':
+                    token->type = TOKEN_COLON;
+                    token->value = ":";
+                    isToken = 1;
+                    break;
+                case '"':
+                    state = sLiter;
+                    break;
+                    // REVIEW
+                case '/':
+                    // c = read_char(stdin);
+                    // if (c == '/')
+                    // { // 1-line comment
+                    //     state = sCommLine;
+                    //     break;
+                    // }
+                    // else if (c == '*')
+                    // { // block-comment
+                    //     state = sCommBlock1;
+                    //     break;
+                    // }
+                    // else
+                    // {
+                    //     ungetc(c, stdin);
+                    //     token->type = TOKEN_DIVIDE;
+                    //     token->value = "/";
+                    //     isToken = 1;
+                    //     break;
+                    // }
+
+                case '*':
+                    token->type = TOKEN_MULTIPLY;
+                    token->value = "*";
+                    isToken = 1;
                     break;
                 case '=':
                     c = read_char(stdin);
@@ -320,13 +327,13 @@ void get_token(Token *token)
                     {
                         token->type = TOKEN_EQUAL;
                         token->value = "==";
-                        isToken = true;
+                        isToken = 1;
                         break;
                     }
-                    ungetc(c, stdin); // Is a single equal sign -> get back
+                    ungetc(c, stdin);
                     token->type = TOKEN_ASSIGN;
                     token->value = "=";
-                    isToken = true;
+                    isToken = 1;
                     break;
                 case '!':
                     c = read_char(stdin);
@@ -334,74 +341,43 @@ void get_token(Token *token)
                     {
                         token->type = TOKEN_NOT_EQUAL;
                         token->value = "!=";
-                        isToken = true;
+                        isToken = 1;
                         break;
                     }
                     ungetc(c, stdin); // Is a single exclamation mark -> get back
                     error_handler(ERR_LEX, token);
                     break;
-
-                case '"':
-                    state = sLiter;
-                    break;
                 case '?':
                     state = sQuestion;
                     c = read_char(stdin);
-                    if (c == 'i')
-                    {
-                        if (match_string("32", stdin))
-                        {
-                            token->type = TOKEN_I32_OPT;
-                            token->value = "?i32";
-                            isToken = true;
-                            break;
-                        }
-                        else
-                            error_handler(ERR_LEX, token);
-                    }
-                    else if (c == 'f')
-                    {
-                        if (match_string("64", stdin))
-                        {
-                            token->type = TOKEN_F64_OPT;
-                            token->value = "?f64";
-                            isToken = true;
-                            break;
-                        }
-                        else
-                            error_handler(ERR_LEX, token);
-                    }
-                    else if (c == '[')
-                    {
-                        if (match_string("]u8", stdin))
-                        {
-                            token->type = TOKEN_U8_OPT;
-                            token->value = "?[]u8";
-                            isToken = true;
-                        }
-                        else
-                            error_handler(ERR_LEX, token);
-                    }
-                    else
-                        error_handler(ERR_LEX, token);
-                    // REVIEW
-                    //  ... ? can '?' be single token?
-                    token->type = TOKEN_OPTIONAL_TYPE;
-                    token->value = "?";
-                    isToken = true;
+                    // TODO
                     break;
                 case EOF:
                     token->type = TOKEN_EOF;
                     token->value = "EOF";
-                    isToken = true;
+                    isToken = 1;
                     break;
 
                 default:
-                    // Is not whitespace, letter, digit, control chars or any of the above -> error
                     if (c > 32)
                         error_handler(ERR_LEX, token);
                     break;
                 }
+                break;
+            }
+            break;
+
+        case sCommLine:
+            while (c >= 32 || (isspace(c) && c != '\n' && c != EOF))
+            { // wait for EOF to complete the comment
+                append_string(&str, c);
+                c = read_char(stdin);
+            }
+            if (c == '\n' || c == EOF)
+            { // got EOF
+                token->type = TOKEN_COMMENT;
+                token->value = str.str;
+                isToken = 1;
                 break;
             }
             break;
@@ -414,97 +390,28 @@ void get_token(Token *token)
                 c = read_char(stdin);
             }
             if (c == '.')
-            {
+            {                              // get '.' so it can be Float_Number
+                token->type = TOKEN_FLOAT; // REVIEW - need here?
                 state = sLiter_Float;
                 append_string(&str, c);
                 break;
             }
             if (c == 'e' || c == 'E')
-            { // get 'e' so it CAN BE number with exponential
+            { // get 'e' so it can be number with exponential
                 state = sExp;
                 append_string(&str, c);
                 break;
             }
             else
             {
-                if (!is_digit(c) && c > 32) // REVIEW
+                if (is_letter(c) || c == '_' || c == '?')
                     error_handler(ERR_LEX, token);
                 token->type = TOKEN_INT;
                 token->value = str.str;
-                isToken = true;
+                isToken = 1;
                 ungetc(c, stdin);
                 break;
             }
-            break;
-
-        case sLiter_Float:
-            while (is_digit(c))
-            {
-                append_string(&str, c);
-                c = read_char(stdin);
-            }
-            if (c == 'e' || c == 'E')
-            { // move to case with Exponential
-                append_string(&str, c);
-                state = sFloat_Exp; // sFloat_Exp
-                break;
-            }
-            // if is not a digit and not a whitespace/control character, it's an error
-            else if (!is_digit(c) && c > 32)
-                error_handler(ERR_LEX, token);
-            else
-            {
-                token->type = TOKEN_FLOAT; // get token of float number
-                token->value = str.str;
-                isToken = true;
-                ungetc(c, stdin);
-                break;
-            }
-
-        case sFloat_Exp: // sFloat_Exp
-            if (c == '+' || c == '-')
-            {
-                append_string(&str, c);
-                state = sFloat_Exp_Char;
-                break;
-            }
-            else if (is_digit(c))
-            {
-                append_string(&str, c);
-                state = sFloat_Exp_Final;
-                break;
-            }
-            else
-                error_handler(ERR_LEX, token);
-            break;
-
-        case sFloat_Exp_Char:
-            if (is_digit(c))
-            {
-                append_string(&str, c);
-                state = sFloat_Exp_Final;
-                break;
-            }
-            else
-                error_handler(ERR_LEX, token);
-            break;
-
-        case sFloat_Exp_Final:
-            while (is_digit(c))
-            {
-                append_string(&str, c);
-                c = read_char(stdin);
-            }
-            if (c > 32 && !is_digit(c))
-            {
-                error_handler(ERR_LEX, token);
-                break;
-            }
-            token->type = TOKEN_FLOAT_EXP; // get exponential number with float main part
-            token->value = str.str;
-            isToken = true;
-            ungetc(c, stdin);
-            break;
             break;
 
         case sExp:
@@ -542,9 +449,9 @@ void get_token(Token *token)
                 append_string(&str, c);
                 c = read_char(stdin);
             }
-            token->type = TOKEN_INT_EXP;
+            token->type = TOKEN_INT_EXP; // get exponential number with integer main part
             token->value = str.str;
-            isToken = true;
+            isToken = 1;
             ungetc(c, stdin);
             break;
 
@@ -554,58 +461,91 @@ void get_token(Token *token)
                 append_string(&str, c);
                 c = read_char(stdin);
             }
-            ungetc(c, stdin);
-
-            int key = is_keyword(str.str);
+            int key = is_keyword(str.str); // identificator can be a keyword, we need to check it
             if (key != KEYWORD_CMP_ERR)
-            {
-                ungetc(c, stdin); // need to unread the last char coz it can be first cymbol of next token
-                token->type = key + 1;
-                token->value = str.str;
-                isToken = true;
-                break;
-            }
-            printf("KEYWORD: %s\n", str.str);
-            ungetc(c, stdin);
-            token->value = str.str;
-            // token->type = is_keyword(token->value);
-            // if (token->type == KEYWORD_CMP_ERR)
-            token->type = TOKEN_IDENTIFIER; // identificator isn't a keyword
-            isToken = true;
-            break;
-
-            // REVIEW
-        case sLiter:
-            c = read_char(stdin);
-            while (c != '"' && c != EOF)
-            {
-                if (c == '\\') // Handle escape sequences
+            { // Pokud je to klíčové slovo
+                if (c == '?' && (key == TOKEN_I32 || key == TOKEN_F64))
                 {
-                    state = sEsc;
-                    break;
-                }
-                else if (c > 31) // Directly append valid characters
-                {
+                    // Pokud je po klíčovém slově typů `i32` nebo `f64` otazník, jde o `typNil`
                     append_string(&str, c);
+                    token->type = key + 1; // Označení nil verze klíčového slova
+                    token->value = str.str;
+                    isToken = 1;
+                    break;
                 }
                 else
                 {
-                    error_handler(ERR_LEX, token);
+                    // Pokud následující znak není otazník, máme normální klíčové slovo
+                    ungetc(c, stdin);
+                    token->type = key;
+                    token->value = str.str;
+                    isToken = 1;
                     break;
                 }
+            }
+            // Kontrola pro jmenný prostor vestavěných funkcí IFJ24 (např. `ifj.write`)
+            if (strncmp(str.str, "ifj", 3) == 0 && c == '.')
+            {
+                append_string(&str, c); // Přidej tečku k identifikátoru
                 c = read_char(stdin);
+                while (is_letter(c) || is_digit(c) || c == '_')
+                {
+                    append_string(&str, c); // Přidá část názvu funkce za tečkou
+                    c = read_char(stdin);
+                }
+                ungetc(c, stdin);
+                token->type = TOKEN_IDENTIFIER_FUNC;
+                token->value = str.str;
+                isToken = 1;
+                break;
+            }
+            ungetc(c, stdin); // identificator isnt keyword
+            token->type = TOKEN_IDENTIFIER;
+            token->value = str.str;
+            isToken = 1;
+            break;
+
+        case sLiter:
+            if ((c >= 35 || c == 32 || c == 33) && c != '\\')
+            {
+                append_string(&str, c);
+                state = sLiterContent;
+                break;
+            }
+            if (c == '"')
+            {
+                state = sLiterContent;
+                break;
+            }
+            if (c == '\\')
+            {
+                append_string(&str, c);
+                state = sEsc;
+                break;
+            }
+            else
+                error_handler(ERR_LEX, token);
+            break;
+            // REVIEW
+        case sLiterContent:
+            while ((c >= 35 || c == 32 || c == 33) && c != '\\')
+            {
+                append_string(&str, c);
+                c = read_char(stdin);
+            }
+            if (c == '\\')
+            {
+                state = sEsc;
+                append_string(&str, c);
+                break;
             }
             if (c == '"')
             {
                 token->type = TOKEN_STRING;
                 token->value = str.str;
-                isToken = true;
+                isToken = 1;
+                break;
             }
-            else // EOF reached without closing quote
-            {
-                error_handler(ERR_LEX, token);
-            }
-            break;
 
         case sEsc:
             if (c == 'x')
@@ -622,6 +562,7 @@ void get_token(Token *token)
             else
                 error_handler(ERR_LEX, token);
             break;
+
         case sHex:
             if (c == '{')
             {
@@ -631,33 +572,95 @@ void get_token(Token *token)
             else
                 error_handler(ERR_LEX, token);
             break;
-        case sHexContent:
-            while (c != '}')
-            {
-                if (is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
-                {
-                    append_string(&str, c);
-                    c = read_char(stdin);
-                }
-                else
-                    error_handler(ERR_LEX, token);
-            }
 
-        case sCommLine:
-            while (c >= 32 || (isspace(c) && c != '\n' && c != EOF))
-            { // wait for EOF to complete the comment
+        case sHexContent:
+            while (is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
+            { // takes A-F, a-f, 1-9
+                hex[idx] = c;
+                c = read_char(stdin);
+                idx++;
+            }
+            if (c == '}')
+            {
+                idx = 0;
+                char *dec = malloc(sizeof(char) * 10);
+                strcpy(dec, hex_to_decimal(hex));
+                char esc = escapeSequence(dec, token);
+                append_string(&str, esc);
+                state = sLiterContent;
+                break;
+            }
+            else
+            {
+                error_handler(ERR_LEX, token);
+            }
+            break;
+
+        case sLiter_Float:
+            while (is_digit(c))
+            {
                 append_string(&str, c);
                 c = read_char(stdin);
             }
-            if (c == '\n' || c == EOF)
-            { // got EOF
-                token->type = TOKEN_COMMENT;
-                token->value = str.str;
-                isToken = true;
+
+            if (c == 'e' || c == 'E')
+            { // move to case with Exponential
+                append_string(&str, c);
+                state = sFloat_Exp;
                 break;
             }
+            // if is not a digit and not a whitespace/control character, it's an error
+            else if (!is_digit(c) && c > 32)
+                error_handler(ERR_LEX, token);
+            else
+            {
+                token->type = TOKEN_FLOAT; // get token of float number
+                token->value = str.str;
+                isToken = 1;
+                ungetc(c, stdin);
+                break;
+            }
+
+        case sFloat_Exp:
+            if (c == '+' || c == '-')
+            {
+                append_string(&str, c);
+                state = sFloat_Exp_Char;
+                break;
+            }
+            else if (is_digit(c))
+            {
+                append_string(&str, c);
+                state = sFloat_Exp_Final;
+                break;
+            }
+            else
+                error_handler(ERR_LEX, token);
             break;
-            // TODO - add multiline comments
+
+        case sFloat_Exp_Char:
+            if (is_digit(c))
+            {
+                append_string(&str, c);
+                state = sFloat_Exp_Final;
+                break;
+            }
+            else
+                error_handler(ERR_LEX, token);
+            break;
+
+        case sFloat_Exp_Final:
+            while (is_digit(c))
+            {
+                append_string(&str, c);
+                c = read_char(stdin);
+            }
+            token->type = TOKEN_FLOAT_EXP; // get exponential number with float main part
+            token->value = str.str;
+            isToken = 1;
+            ungetc(c, stdin);
+            break;
+            break;
 
         default:
             error_handler(ERR_LEX, token);
@@ -676,8 +679,8 @@ int main()
         get_token(token);
         print_token(token);
     }
-    free_token(token);
+    free(token);
     return 0;
 }
 
-#endif // SCANNER_C
+#endif

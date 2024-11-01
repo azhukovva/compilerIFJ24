@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include "../errors/error.h"
+#include "../dynamicString/dynamicString.h"
 
 #define KEYWORD_CMP_ERR 99
 #define MAX_TOKEN_LENGHT 100 // Random:)

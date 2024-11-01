@@ -15,6 +15,7 @@ typedef struct
 {
     char *str;
     int len;
+     int capacity;  
 } dynamicString;
 
 /**
