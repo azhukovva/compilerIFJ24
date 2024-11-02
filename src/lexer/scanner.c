@@ -20,6 +20,57 @@
 
 // List of all possible keywords
 char *keyword[] = {"const", "else", "fn", "if", "i32", "f64", "null", "pub", "return", "u8", "var", "void", "while"};
+const char *tokenName[] = {
+    "TOKEN_EMPTY",
+    "TOKEN_UNDERLINE",
+    "TOKEN_IDENTIFIER",
+    "TOKEN_IDENTIFIER_FUNC",
+    "TOKEN_INT",
+    "TOKEN_INT_EXP",
+    "TOKEN_FLOAT",
+    "TOKEN_FLOAT_EXP",
+    "TOKEN_COMMENT",
+    "TOKEN_STRING",
+    "TOKEN_EOF",
+    "TOKEN_PLUS",
+    "TOKEN_MINUS",
+    "TOKEN_MULTIPLY",
+    "TOKEN_DIVIDE",
+    "TOKEN_CONCAT",
+    "TOKEN_LEFT_BRACKET",
+    "TOKEN_RIGHT_BRACKET",
+    "TOKEN_LEFT_BRACE",
+    "TOKEN_RIGHT_BRACE",
+    "TOKEN_ARROW",
+    "TOKEN_COMMA",
+    "TOKEN_COLON",
+    "TOKEN_SEMICOLON",
+    "TOKEN_LESS_THAN",
+    "TOKEN_LESS_EQUAL",
+    "TOKEN_GREATER_THAN",
+    "TOKEN_GREATER_EQUAL",
+    "TOKEN_EQUAL",
+    "TOKEN_ASSIGN",
+    "TOKEN_NOT_EQUAL",
+    "TOKEN_OPTIONAL_TYPE",
+    "TOKEN_VAR",
+    "TOKEN_ELSE",
+    "TOKEN_FN",
+    "TOKEN_IF",
+    "TOKEN_I32",
+    "TOKEN_I32_OPT",
+    "TOKEN_F64",
+    "TOKEN_F64_OPT",
+    "TOKEN_U8",
+    "TOKEN_U8_OPT",
+    "TOKEN_PUB",
+    "TOKEN_RETURN",
+    "TOKEN_VOID",
+    "TOKEN_WHILE",
+    "TOKEN_CONST",
+    "TOKEN_NULL"
+};
+
 
 TokenType is_keyword(char *s) // func to check if Ident is Keyword
 {
