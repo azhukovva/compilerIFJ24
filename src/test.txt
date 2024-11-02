@@ -1,1 +1,1 @@
-pub func a
+x + a = 5
