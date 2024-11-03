@@ -1,7 +1,8 @@
 #include "topDown.h"
+#include "../lexer/scanner.h"
 
 
-extern const char *tokenName[];
+// extern const char *tokenName[];
 
 //Current token pointer
 Token *current_token;
@@ -195,15 +196,15 @@ void main_func_rule(){
 }
 
 
-int main(){
+// int main(){
     
-    current_token = init_token();
-    next_token();
-    printf("Token: %s, %s\n", tokenName[current_token->type], current_token->value);
-    program_rule();
+//     current_token = init_token();
+//     next_token();
+//     printf("Token: %s, %s\n", tokenName[current_token->type], current_token->value);
+//     program_rule();
 
-    printf("yep\n");
-    //free(current_token->value);
-    free(current_token);
+//     printf("yep\n");
+//     //free(current_token->value);
+//     free(current_token);
     
-}
+// }

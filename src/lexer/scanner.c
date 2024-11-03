@@ -20,6 +20,8 @@
 
 // List of all possible keywords
 char *keyword[] = {"const", "else", "fn", "if", "i32", "f64", "null", "pub", "return", "u8", "var", "void", "while"};
+
+// List of all possible token names
 const char *tokenName[] = {
     "TOKEN_EMPTY",
     "TOKEN_UNDERLINE",
@@ -50,6 +52,7 @@ const char *tokenName[] = {
     "TOKEN_GREATER_THAN",
     "TOKEN_GREATER_EQUAL",
     "TOKEN_EQUAL",
+    "TOKEN_AT",
     "TOKEN_ASSIGN",
     "TOKEN_NOT_EQUAL",
     "TOKEN_OPTIONAL_TYPE",
@@ -68,13 +71,10 @@ const char *tokenName[] = {
     "TOKEN_VOID",
     "TOKEN_WHILE",
     "TOKEN_CONST",
-    "TOKEN_NULL"
-};
-
+    "TOKEN_NULL"};
 
 TokenType is_keyword(char *s) // func to check if Ident is Keyword
 {
-    printf("s: %s\n", s);
     for (int i = 0; i < 13; i++)
     {
         if (strcmp(s, keyword[i]) == 0)
@@ -580,14 +580,14 @@ void get_token(Token *token)
                 {
                     // Pokud je po klíčovém slově typů `i32` nebo `f64` otazník, jde o `typNil`
                     append_string(&str, c);
-                    token->type = key + 1; // Označení nil verze klíčového slova
+                    token->type = key + 1; 
                     token->value = str.str;
                     isToken = 1;
                     break;
                 }
                 else
                 {
-                    // Pokud následující znak není otazník, máme normální klíčové slovo
+                    // není otazník -> normální klíčové slovo
                     ungetc(c, stdin);
                     token->type = key;
                     token->value = str.str;
@@ -781,7 +781,7 @@ void get_token(Token *token)
     }
 }
 
-/*int main()
+int main()
 {
     Token *token = init_token();
     char c;
@@ -793,6 +793,6 @@ void get_token(Token *token)
     }
     free(token);
     return 0;
-}*/
+}
 
 #endif
