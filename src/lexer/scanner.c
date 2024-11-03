@@ -23,7 +23,8 @@ char *keyword[] = {"const", "else", "fn", "if", "i32", "f64", "null", "pub", "re
 
 TokenType is_keyword(char *s) // func to check if Ident is Keyword
 {
-    for (int i = 0; i < 11; i++)
+    printf("s: %s\n", s);
+    for (int i = 0; i < 13; i++)
     {
         if (strcmp(s, keyword[i]) == 0)
         {
@@ -50,7 +51,6 @@ TokenType is_keyword(char *s) // func to check if Ident is Keyword
             case 9:
                 return TOKEN_U8;
             case 10:
-                printf("var\n");
                 return TOKEN_VAR;
             case 11:
                 return TOKEN_VOID;
@@ -121,6 +121,19 @@ char read_char(FILE *fp)
 {
     char c = fgetc(fp);
     return c;
+}
+
+bool match_string(const char *target, FILE *input)
+{
+    char string[256]; // Buffer to hold the input string
+    if (fgets(string, sizeof(string), input) != NULL)
+    {
+
+        string[strcspn(string, "\n")] = '\0';
+        return strcmp(string, target) == 0; // Returns true if equal
+    }
+
+    return false; // Return false if reading fails
 }
 
 char escapeSequence(char *dec, Token *token)
@@ -335,6 +348,11 @@ void get_token(Token *token)
                     token->value = "=";
                     isToken = 1;
                     break;
+                case '@':
+                    token->type = TOKEN_AT;
+                    token->value = "@";
+                    isToken = 1;
+                    break;
                 case '!':
                     c = read_char(stdin);
                     if (c == '=')
@@ -351,7 +369,50 @@ void get_token(Token *token)
                     state = sQuestion;
                     c = read_char(stdin);
                     // TODO
+                    if (c == 'i')
+                    {
+                        if (match_string("32", stdin))
+                        {
+                            token->type = TOKEN_I32_OPT;
+                            token->value = "?i32";
+                            isToken = true;
+                            break;
+                        }
+                        else
+                            error_handler(ERR_LEX, token);
+                    }
+                    else if (c == 'f')
+                    {
+                        if (match_string("64", stdin))
+                        {
+                            token->type = TOKEN_F64_OPT;
+                            token->value = "?f64";
+                            isToken = true;
+                            break;
+                        }
+                        else
+                            error_handler(ERR_LEX, token);
+                    }
+                    else if (c == '[')
+                    {
+                        if (match_string("]u8", stdin))
+                        {
+                            token->type = TOKEN_U8_OPT;
+                            token->value = "?[]u8";
+                            isToken = true;
+                        }
+                        else
+                            error_handler(ERR_LEX, token);
+                    }
+                    else
+                        error_handler(ERR_LEX, token);
+                    // REVIEW
+                    //  ... ? can '?' be single token?
+                    token->type = TOKEN_OPTIONAL_TYPE;
+                    token->value = "?";
+                    isToken = true;
                     break;
+
                 case EOF:
                     token->type = TOKEN_EOF;
                     token->value = "EOF";
