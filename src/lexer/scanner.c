@@ -23,7 +23,6 @@ char *keyword[] = {"const", "else", "fn", "if", "i32", "f64", "null", "pub", "re
 
 TokenType is_keyword(char *s) // func to check if Ident is Keyword
 {
-    printf("s: %s\n", s);
     for (int i = 0; i < 13; i++)
     {
         if (strcmp(s, keyword[i]) == 0)
