@@ -1,3 +1,7 @@
+<<<<<<< HEAD
 pub fn decrement(n: i32, m: i32) i32 {
     return m;
 }
+=======
+@ ?i32
+>>>>>>> origin/HEAD
