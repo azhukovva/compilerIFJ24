@@ -793,6 +793,6 @@ void get_token(Token *token)
     }
     free(token);
     return 0;
-}
-*/
+}*/
+
 #endif

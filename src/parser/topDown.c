@@ -141,29 +141,35 @@ void param_rule(){
 
 // <Param_type> ::= <Optional_question_mark> <Base_type>
 void param_type_rule(){
-    optional_q_mark_rule();
     base_type_rule();
 }
 
-// <Optional_question_mark> ::= ? | eps
-void optional_q_mark_rule(){
-    //?
-    if(current_token->type == TOKEN_OPTIONAL_TYPE){
-        expect(TOKEN_OPTIONAL_TYPE);
-    }
-    //eps
-}
+
 
 // <Base_type> ::= i32 | f64 | []u8
 void base_type_rule(){
-    if(current_token->type == TOKEN_I32){
+    switch (current_token->type)
+    {
+    case TOKEN_I32:
         expect(TOKEN_I32);
-    } else if(current_token->type == TOKEN_F64){
+        break;
+    case TOKEN_F64:
         expect(TOKEN_F64);
-    } else if(current_token->type == TOKEN_U8){
+        break;
+    case TOKEN_U8:
         expect(TOKEN_U8);
-    } else {
-        syntax_error();
+        break;
+    case TOKEN_I32_OPT:
+        expect(TOKEN_I32_OPT);
+        break;
+    case TOKEN_F64_OPT:
+        expect(TOKEN_F64_OPT);
+        break;
+    case TOKEN_U8_OPT:
+        expect(TOKEN_U8_OPT);
+        break;
+    default:
+        break;
     }
 }
 
@@ -172,7 +178,6 @@ void return_type_rule(){
     if(current_token->type == TOKEN_VOID){
         expect(TOKEN_VOID);
     } else {
-        optional_q_mark_rule();
         base_type_rule();
     }
 }
@@ -194,7 +199,7 @@ void statements_rule(){
 // Function that defines whether or not we have any statements to parse
 bool is_statement_start(TokenType type){
     return type == TOKEN_CONST || type == TOKEN_VAR || type == TOKEN_IDENTIFIER ||
-           type == TOKEN_IF || type == TOKEN_WHILE || type == TOKEN_RETURN; //|| type == TOKEN_IDENTIFIER_FUNC; for inbuilt functions TBD
+           type == TOKEN_IF || type == TOKEN_WHILE || type == TOKEN_RETURN || type == TOKEN_IDENTIFIER_FUNC;
 }
 
 void statement_rule(){
@@ -202,13 +207,14 @@ void statement_rule(){
         syntax_error();
     }
     switch (current_token->type){
-        //TODO: inbuilt functions
         case TOKEN_CONST:
         case TOKEN_VAR:
             printf("var\n");
             //printf("Checking token: type: %s val: %s\n", tokenName[current_token->type], current_token->value);
             var_rule();
             break;
+        // assigment or function call
+        case TOKEN_IDENTIFIER_FUNC:
         case TOKEN_IDENTIFIER:
             printf("assigment\n");
             assigment_rule();
@@ -223,6 +229,7 @@ void statement_rule(){
             return_statement_rule();
             break; 
         default:
+            printf("XD?\n");
             syntax_error();
             break;
         
@@ -263,13 +270,28 @@ void var_type_rule(){
 }
 //<assigment> ::= id = <Expression> ;
 void assigment_rule(){
+    //inbuilt function call
+    if(current_token->type == TOKEN_IDENTIFIER_FUNC){
+        expect(TOKEN_IDENTIFIER_FUNC);;
+        function_call_rule();
+        return;
+    } 
     expect(TOKEN_IDENTIFIER);
+
+    //if the identifier was a user function identifier
     if(current_token->type == TOKEN_LEFT_BRACKET){
         function_call_rule();
         return;
     }
     expect(TOKEN_ASSIGN);
-    //TODO: string assignment case
+    
+    //inbuilt function call
+    if(current_token->type == TOKEN_IDENTIFIER_FUNC){
+        printf("here\n");
+        expect(TOKEN_IDENTIFIER_FUNC);
+        function_call_rule();
+        return;
+    }
 
     //expression_rule();
     //заглушка
@@ -288,6 +310,7 @@ void function_call_rule(){
     arguments_rule();
     expect(TOKEN_RIGHT_BRACKET);
     expect(TOKEN_SEMICOLON);
+    printf("function call end\n");
 }
 
 //<Arguments> ::= <Argument> <Arguments_tail>
@@ -319,14 +342,19 @@ void argument_rule(){
 
 //<Literal> ::= int | float | string
 void literal_rule(){
-    if(current_token->type == TOKEN_INT){
+    switch (current_token->type) {
+    case TOKEN_INT:
         expect(TOKEN_INT);
-    } else if(current_token->type == TOKEN_FLOAT){
+        break;
+    case TOKEN_FLOAT:
         expect(TOKEN_FLOAT);
-    } else if(current_token->type == TOKEN_STRING){
+        break;
+    case TOKEN_STRING:
         expect(TOKEN_STRING);
-    } else {
+        break;
+    default:
         syntax_error();
+        break;
     }
 }
 
@@ -385,7 +413,6 @@ void while_statement_rule(){
 //<return> ::= return <Expression_opt> ;
 void return_statement_rule(){
     expect(TOKEN_RETURN);
-    //expression_opt_rule();
     expression_opt_rule();
     expect(TOKEN_SEMICOLON);
     encountered_return = true;
