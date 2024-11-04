@@ -781,7 +781,7 @@ void get_token(Token *token)
     }
 }
 
-int main()
+/*int main()
 {
     Token *token = init_token();
     char c;
@@ -794,5 +794,5 @@ int main()
     free(token);
     return 0;
 }
-
+*/
 #endif
