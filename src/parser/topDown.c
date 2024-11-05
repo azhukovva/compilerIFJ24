@@ -441,19 +441,19 @@ void expression_opt_rule(){
 }
 
 
-int main(){
+// int main(){
     
-     current_token = init_token();
-     next_token();
-//     printf("Token: %s, %s\n", tokenName[current_token->type], current_token->value);
-     program_rule();
-     if(encoutered_main){
-        printf("yep\n");
-     } else{
-        syntax_error();
-     }
+//      current_token = init_token();
+//      next_token();
+// //     printf("Token: %s, %s\n", tokenName[current_token->type], current_token->value);
+//      program_rule();
+//      if(encoutered_main){
+//         printf("yep\n");
+//      } else{
+//         syntax_error();
+//      }
      
-     //free(current_token->value);
-     free(current_token);
-     return 0;
- }
+//      //free(current_token->value);
+//      free(current_token);
+//      return 0;
+//  }

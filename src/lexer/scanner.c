@@ -178,11 +178,11 @@ char read_char(FILE *fp)
 
 bool match_string(const char *target, FILE *input)
 {
-    char string[256]; // Buffer to hold the input string
-    if (fgets(string, sizeof(string), input) != NULL)
+    size_t len = strlen(target);
+    char string[len + 1]; // Buffer to hold the input string
+    if (fread(string, 1, len, input) == len)
     {
-
-        string[strcspn(string, "\n")] = '\0';
+        string[len] = '\0';
         return strcmp(string, target) == 0; // Returns true if equal
     }
 
@@ -424,8 +424,10 @@ void get_token(Token *token)
                     // TODO
                     if (c == 'i')
                     {
+                        
                         if (match_string("32", stdin))
                         {
+                
                             token->type = TOKEN_I32_OPT;
                             token->value = "?i32";
                             isToken = true;
@@ -498,29 +500,32 @@ void get_token(Token *token)
 
         case sLiter_Int:
             while (is_digit(c))
-            {
+            {  
                 token->type = TOKEN_INT;
                 append_string(&str, c);
                 c = read_char(stdin);
             }
             if (c == '.')
-            {                              // get '.' so it can be Float_Number
+            {             
+                       
                 token->type = TOKEN_FLOAT; // REVIEW - need here?
                 state = sLiter_Float;
                 append_string(&str, c);
+                 c = read_char(stdin); // Read the next character after '.'
                 break;
             }
             if (c == 'e' || c == 'E')
             { // get 'e' so it can be number with exponential
                 state = sExp;
                 append_string(&str, c);
+                 c = read_char(stdin); // Read the next character after '.'
                 break;
             }
             else
             {
                 if (is_letter(c) || c == '_' || c == '?')
                     error_handler(ERR_LEX, token);
-                token->type = TOKEN_INT;
+                // token->type = TOKEN_INT; //REVIEW 
                 token->value = str.str;
                 isToken = 1;
                 ungetc(c, stdin);
@@ -721,11 +726,16 @@ void get_token(Token *token)
             { // move to case with Exponential
                 append_string(&str, c);
                 state = sFloat_Exp;
+                 c = read_char(stdin); // Read the next character after 'e' or 'E'
                 break;
             }
+            //REVIEW  крашилось при ; in the end of expression
             // if is not a digit and not a whitespace/control character, it's an error
-            else if (!is_digit(c) && c > 32)
-                error_handler(ERR_LEX, token);
+            // else if (!is_digit(c) && c > 32){
+            //     printf("Error: %c\n", c);
+            //     error_handler(ERR_LEX, token);
+            //     break;
+            // }
             else
             {
                 token->type = TOKEN_FLOAT; // get token of float number
@@ -783,7 +793,7 @@ void get_token(Token *token)
     }
 }
 
-/*int main()
+int main()
 {
     Token *token = init_token();
     char c;
@@ -795,6 +805,6 @@ void get_token(Token *token)
     }
     free(token);
     return 0;
-}*/
+}
 
 #endif
