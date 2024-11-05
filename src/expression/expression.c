@@ -38,3 +38,11 @@ void free_expression(Expression *expression) {
     expression->lastElement = NULL;
     expression->currentLength = 0;
 }
+
+void print_expression(Expression *expression) {
+    ExpElementPtr current = expression->firstElement;
+    while (current != NULL) {
+        printf("type: %d val: %s\n", current->data->type, current->data->value);
+        current = current->nextElement;
+    }
+}

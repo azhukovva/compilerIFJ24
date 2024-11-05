@@ -22,5 +22,6 @@ typedef struct {
 void init_expression(Expression *expression);
 void add_element(Expression *expression, Token *token);
 void free_expression(Expression *expression);
+void print_expression(Expression *expression);
 
 #endif //EXPRESSION_H
