@@ -1,5 +1,5 @@
 #include "expression.h"
-#include "../parser/precAnalyza.h"
+    #include "../parser/bottomUp.h"
 #include "../lexer/scanner.h"
 
 void init_expression(Expression *expression) {
@@ -14,14 +14,12 @@ void add_element(Expression *expression, Token *token) {
         fprintf(stderr, "Memory allocation error\n");
         exit(1);
     }
-    printf("EXPR, adding element: type: %s val: %s\n", tokenName[token->type], token->value);
-    // Создание копии токена
     Token *token_copy = (Token *)malloc(sizeof(Token));
     if (token_copy == NULL) {
         fprintf(stderr, "Memory allocation error\n");
         exit(1);
     }
-    *token_copy = *token; // Копирование содержимого токена
+    *token_copy = *token;
     newElement->data = token_copy;
     newElement->nextElement = NULL;
 
@@ -49,8 +47,10 @@ void free_expression(Expression *expression) {
 
 void print_expression(Expression *expression) {
     ExpElementPtr current = expression->firstElement;
+    printf("---EXPRESSION---\n");
     while (current != NULL) {
         printf("type: %s val: %s\n", tokenName[current->data->type], current->data->value);
         current = current->nextElement;
     }
+    printf("---------------\n\n");
 }

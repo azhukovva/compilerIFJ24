@@ -71,7 +71,9 @@ const char *tokenName[] = {
     "TOKEN_VOID",
     "TOKEN_WHILE",
     "TOKEN_CONST",
-    "TOKEN_NULL"};
+    "TOKEN_NULL",
+    "TOKEN_END",
+    "TOKEN_E"};
 
 TokenType is_keyword(char *s) // func to check if Ident is Keyword
 {

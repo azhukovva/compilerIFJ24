@@ -257,8 +257,8 @@ void var_rule(){
         add_element(expr, current_token);
         next_token();
     }
-    print_expression(expr);
-    //parse_expression(expr);
+    //print_expression(expr);
+    parse_expression(expr);
     
     //заглушка
     //expect(TOKEN_IDENTIFIER);

@@ -19,6 +19,7 @@ SRCS = $(LEXER_DIR)/scanner.c \
        $(ERRORS_DIR)/error.c \
        $(PARSER_DIR)/parser.c \
        $(PARSER_DIR)/topDown.c \
+       $(PARSER_DIR)/bottomUp.c \
        $(STACK_DIR)/stack.c \
        $(SYMBOL_TABLE_DIR)/symTable.c \
        $(EXPRESSION_DIR)/expression.c

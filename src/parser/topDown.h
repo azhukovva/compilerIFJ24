@@ -3,6 +3,7 @@
 #include "../lexer/scanner.h"
 #include "../stack/stack.h"
 #include "../expression/expression.h"
+#include "bottomUp.h"
 
 void functions_rule();
 void main_func_rule();
