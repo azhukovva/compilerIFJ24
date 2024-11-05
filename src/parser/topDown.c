@@ -3,7 +3,7 @@
 
 
 // extern const char *tokenName[];
-
+ 
 //Current token pointer
 Token *current_token;
 bool encoutered_main = false;
@@ -17,6 +17,10 @@ void next_token(){
 //Error handling 
 void syntax_error(){
     error_exit(ERR_SYNTAX);
+}
+
+void get_expression(){
+    //TODO
 }
 
 //Compare current token type and expected token type. Get the next token if they match. 
@@ -210,7 +214,6 @@ void statement_rule(){
         case TOKEN_CONST:
         case TOKEN_VAR:
             printf("var\n");
-            //printf("Checking token: type: %s val: %s\n", tokenName[current_token->type], current_token->value);
             var_rule();
             break;
         // assigment or function call
@@ -243,11 +246,24 @@ void var_rule(){
     var_type_rule();
     expect(TOKEN_ASSIGN);
     
-    //expression_rule();
+    Expression *expr = (Expression *)malloc(sizeof(Expression));
+    if(expr == NULL){
+        error_exit(ERR_INTERNAL);
+    }
+    init_expression(expr);
+
+    while(current_token->type != TOKEN_SEMICOLON){
+        
+        add_element(expr, current_token);
+        next_token();
+    }
+    print_expression(expr);
+    //parse_expression(expr);
     
     //заглушка
-    expect(TOKEN_IDENTIFIER);
+    //expect(TOKEN_IDENTIFIER);
     expect(TOKEN_SEMICOLON);
+    //free_expression(expr);
 }
 
 //<Var_mode> ::= const | var
@@ -292,7 +308,6 @@ void assigment_rule(){
         function_call_rule();
         return;
     }
-
     //expression_rule();
     //заглушка
     expect(TOKEN_IDENTIFIER);

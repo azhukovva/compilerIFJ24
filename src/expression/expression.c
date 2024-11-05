@@ -14,7 +14,15 @@ void add_element(Expression *expression, Token *token) {
         fprintf(stderr, "Memory allocation error\n");
         exit(1);
     }
-    newElement->data = token;
+    printf("EXPR, adding element: type: %s val: %s\n", tokenName[token->type], token->value);
+    // Создание копии токена
+    Token *token_copy = (Token *)malloc(sizeof(Token));
+    if (token_copy == NULL) {
+        fprintf(stderr, "Memory allocation error\n");
+        exit(1);
+    }
+    *token_copy = *token; // Копирование содержимого токена
+    newElement->data = token_copy;
     newElement->nextElement = NULL;
 
     if (expression->firstElement == NULL) {
@@ -42,7 +50,7 @@ void free_expression(Expression *expression) {
 void print_expression(Expression *expression) {
     ExpElementPtr current = expression->firstElement;
     while (current != NULL) {
-        printf("type: %d val: %s\n", current->data->type, current->data->value);
+        printf("type: %s val: %s\n", tokenName[current->data->type], current->data->value);
         current = current->nextElement;
     }
 }

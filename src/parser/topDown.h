@@ -1,6 +1,8 @@
 #ifndef TOPDOWN_H
 #define TOPDOWN_H
 #include "../lexer/scanner.h"
+#include "../stack/stack.h"
+#include "../expression/expression.h"
 
 void functions_rule();
 void main_func_rule();
@@ -14,7 +16,6 @@ void params_rule();
 void param_rule();
 void param_tail_rule();
 void param_type_rule();
-void optional_q_mark_rule();
 void base_type_rule();
 void statements_rule();
 void statement_rule();

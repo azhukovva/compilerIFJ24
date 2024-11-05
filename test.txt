@@ -1,8 +1,5 @@
 const ifj = @import("ifj24.zig");
 pub fn my_func(x : f64) i32 {}
 pub fn main() void{
-    xd = ifj.string("xd");
-    ifj.write("ct");
-    ifj.i2f(32);
-    cringe = ifj.f2i(465);
+    var x = 5 + 3 * 4; 
 }
