@@ -4,8 +4,8 @@ char precedence_table[14][14] = {
     // (   )    +    -    *    /   ==   !=    <    >   <=    >=   i    $
     {'<', '=', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', ' '}, // (
     {'>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', ' ', '>'}, // )
-    {'<', '>', '>', '<', '>', '>', '>', '>', '>', '>', '>', '>', '<', '>'}, // +
-    {'<', '>', '>', '<', '>', '>', '>', '>', '>', '>', '>', '>', '<', '>'}, // -
+    {'<', '>', '>', '>', '<', '<', '>', '>', '>', '>', '>', '>', '<', '>'}, // +
+    {'<', '>', '>', '>', '<', '<', '>', '>', '>', '>', '>', '>', '<', '>'}, // -
     {'<', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '<', '>'}, // *
     {'<', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '<', '>'}, // /
     {'<', '>', '<', '<', '>', '>', '<', '<', '<', '<', '<', '<', '<', '>'}, // ==
@@ -142,27 +142,6 @@ void parse_expression(Expression *expression) {
             free_stack(&stack);  // Free the stack before exiting
             return;
         }
-    }
-
-    // Final reduction after the last input token if needed
-    Token *stack_top_token = top(&stack);  // Check top of the stack
-    if (stack_top_token != NULL && stack_top_token->type == TOKEN_E) {
-        // If the stack top is an expression (E), and the input is '$', perform the final reduction
-        Token *input_end_token = malloc(sizeof(Token));
-        input_end_token->type = TOKEN_END;  // Simulate the end of input
-
-        char final_precedence = get_precedence(stack_top_token->type, input_end_token->type);
-        if (final_precedence == '>') {
-            // Final reduction to complete parsing
-            reduce(&stack);
-            printf("Parsing completed successfully: Expression reduced to E.\n");
-        } else {
-            printf("Syntax error: Could not reduce at the end.\n");
-        }
-
-        free(input_end_token);
-    } else {
-        printf("Syntax error: No valid expression found.\n");
     }
 
     free_stack(&stack);  // Free memory used by the stack
