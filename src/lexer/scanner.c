@@ -793,18 +793,18 @@ void get_token(Token *token)
     }
 }
 
-int main()
-{
-    Token *token = init_token();
-    char c;
-    while ((c = read_char(stdin)) != EOF)
-    {
-        ungetc(c, stdin);
-        get_token(token);
-        print_token(token);
-    }
-    free(token);
-    return 0;
-}
+// int main()
+// {
+//     Token *token = init_token();
+//     char c;
+//     while ((c = read_char(stdin)) != EOF)
+//     {
+//         ungetc(c, stdin);
+//         get_token(token);
+//         print_token(token);
+//     }
+//     free(token);
+//     return 0;
+// }
 
 #endif

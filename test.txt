@@ -1,2 +1,8 @@
+
 const ifj = @import("ifj24.zig");
-pub fn my_func(x : f64) ?i32 {}
+pub fn my_func(x : f64) i32 {}
+pub fn main()void{
+    var x = 3.5346456;
+    x = x + 3.14e+10;
+
+}
