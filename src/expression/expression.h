@@ -6,13 +6,11 @@
 #include "../lexer/scanner.h"
 
 
-/** Prvek jednosměrně vázaného seznamu. */
 typedef struct ExpElement {
     Token *data;
     struct ExpElement *nextElement;
 } *ExpElementPtr;
 
-/** Jednosměrně vázaný seznam. */
 typedef struct {
     ExpElementPtr firstElement;
     ExpElementPtr lastElement;

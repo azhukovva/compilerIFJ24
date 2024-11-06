@@ -25,6 +25,13 @@ Token *pop(Stack *stack) {
     return token;
 }
 
+Token *top(Stack *stack) {
+	if (stack->top == NULL) {
+        return NULL;
+    }
+    return stack->top->data;
+}
+
 void free_stack(Stack *stack) {
     while (stack->top != NULL) {
         StackElementPtr topElement = stack->top;

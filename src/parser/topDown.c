@@ -27,20 +27,28 @@ Expression* get_expression(){
     init_expression(expr);
 
     while(current_token->type != TOKEN_SEMICOLON){
-       
+
         if(current_token->type == TOKEN_EOF){
             syntax_error();
         }
         add_element(expr, current_token);
         next_token();
-        
+
     }
+	Token *end_token = (Token *)malloc(sizeof(Token));
+	if (end_token == NULL) {
+        error_exit(ERR_INTERNAL);
+    }
+	end_token->type = TOKEN_END;
+	end_token->value = "$";
+	add_element(expr, end_token);
+//TODO free endtoken
      printf("hereee\n");
     return expr;
 }
 
 //i think we'll be handling comments in the expect function
-//Compare current token type and expected token type. Get the next token if they match. 
+//Compare current token type and expected token type. Get the next token if they match.
 void expect(TokenType type){
     //printf("Checking: type: %s val: %s\n", tokenName[current_token->type], current_token->value);
     if(current_token->type == type){
@@ -332,7 +340,7 @@ void assigment_rule(){
         error_exit(ERR_INTERNAL);
     }
     init_expression(expr);
-    add_element(expr, token_copy);
+	if (token_copy->type == TOKEN_IDENTIFIER) add_element(expr, token_copy);
     while(current_token->type != TOKEN_SEMICOLON){
         if(current_token->type == TOKEN_EOF){
             syntax_error();
@@ -340,8 +348,16 @@ void assigment_rule(){
         add_element(expr, current_token);
         next_token();
     }
+	Token *end_token = (Token *)malloc(sizeof(Token));
+	if (end_token == NULL) {
+        error_exit(ERR_INTERNAL);
+    }
+	end_token->type = TOKEN_END;
+	end_token->value = "$";
+	add_element(expr, end_token);
+//TODO free endtoken
     print_expression(expr);
-    //parse_expression(expr);
+    parse_expression(expr);
     expect(TOKEN_SEMICOLON);
     free(token_copy);
     free_expression(expr);
@@ -471,7 +487,7 @@ void expression_opt_rule(){
 
 
 int main(){
-    
+
      current_token = init_token();
      next_token();
 //     printf("Token: %s, %s\n", tokenName[current_token->type], current_token->value);
@@ -481,7 +497,7 @@ int main(){
      } else{
         syntax_error();
      }
-     
+
      //free(current_token->value);
      free(current_token);
      return 0;

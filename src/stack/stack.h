@@ -19,6 +19,7 @@ typedef struct {
 void init_stack(Stack *stack);
 void push(Stack *stack, Token *token);
 Token *pop(Stack *stack);
+Token *top(Stack *stack);
 void free_stack(Stack *stack);
 void print_stack(Stack *stack);
 bool stackIsEmpty(Stack *stack);
