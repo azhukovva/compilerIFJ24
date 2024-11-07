@@ -4,8 +4,8 @@ char precedence_table[14][14] = {
     // (   )    +    -    *    /   ==   !=    <    >   <=    >=   i    $
     {'<', '=', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', ' '}, // (
     {'>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', ' ', '>'}, // )
-    {'<', '>', '>', '>', '<', '<', '>', '>', '>', '>', '>', '>', '<', '>'}, // +
-    {'<', '>', '>', '>', '<', '<', '>', '>', '>', '>', '>', '>', '<', '>'}, // -
+    {'<', '>', '>', '<', '>', '>', '>', '>', '>', '>', '>', '>', '<', '>'}, // +
+    {'<', '>', '>', '<', '>', '>', '>', '>', '>', '>', '>', '>', '<', '>'}, // -
     {'<', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '<', '>'}, // *
     {'<', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '<', '>'}, // /
     {'<', '>', '<', '<', '>', '>', '<', '<', '<', '<', '<', '<', '<', '>'}, // ==
@@ -86,7 +86,7 @@ void parse_expression(Expression *expression) {
     init_stack(&stack);
 
     // Push the end-of-input symbol ('$') onto the stack
-    Token *end_of_input = malloc(sizeof(Token));
+    Token *end_of_input =  malloc(sizeof(Token));
     end_of_input->type = TOKEN_END;  // '$' represents the end of input
     end_of_input->value = "$";
     shift(&stack, end_of_input);  // Shift the end-of-input symbol onto the stack
@@ -114,7 +114,7 @@ void parse_expression(Expression *expression) {
         // If no terminal token is found, we can't proceed with precedence check
         if (first_terminal_token == NULL) {
             printf("Error: No terminal token found on the stack.\n");
-            free_stack(&stack);
+            //free_stack(&stack);
             return;
         }
 
@@ -132,19 +132,40 @@ void parse_expression(Expression *expression) {
             reduce(&stack);
         } else if (precedence == ' ') {
             printf("Error: Invalid expression.\n");
-            free_stack(&stack);  // Free the stack before exiting
+            //free_stack(&stack);  // Free the stack before exiting
             error_exit(ERR_SYNTAX);
             return;
 
         } else if (precedence == 'V') {
             // Handle syntax error if precedence is invalid
             printf("Expression is valid.\n");
-            free_stack(&stack);  // Free the stack before exiting
+            //free_stack(&stack);  // Free the stack before exiting
             return;
         }
     }
 
-    free_stack(&stack);  // Free memory used by the stack
+    // Final reduction after the last input token if needed
+    Token *stack_top_token = top(&stack);  // Check top of the stack
+    if (stack_top_token != NULL && stack_top_token->type == TOKEN_E) {
+        // If the stack top is an expression (E), and the input is '$', perform the final reduction
+        Token *input_end_token = malloc(sizeof(Token));
+        input_end_token->type = TOKEN_END;  // Simulate the end of input
+
+        char final_precedence = get_precedence(stack_top_token->type, input_end_token->type);
+        if (final_precedence == '>') {
+            // Final reduction to complete parsing
+            reduce(&stack);
+            printf("Parsing completed successfully: Expression reduced to E.\n");
+        } else {
+            printf("Syntax error: Could not reduce at the end.\n");
+        }
+
+        //free(input_end_token);
+    } else {
+        printf("Syntax error: No valid expression found.\n");
+    }
+
+    //free_stack(&stack);  // Free memory used by the stack
 }
 
 void stack_reduce(Stack *stack) {

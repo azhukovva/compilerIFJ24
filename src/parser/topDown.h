@@ -39,6 +39,9 @@ void arguments_rule();
 void arguments_tail_rule();
 void argument_rule();
 void literal_rule();
+void expect(TokenType type);
+void expect_id(char *id);
+void expect_string(char *string);
 
 bool is_statement_start(TokenType type);
 

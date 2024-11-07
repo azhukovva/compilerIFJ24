@@ -1,6 +1,14 @@
-
 const ifj = @import("ifj24.zig");
 pub fn my_func(x : f64) i32 {}
 pub fn main()void{
-    x = 3.0 + 5.0 * (2.0 > 3.0 / (4.0 + 5.0));
+    const l = x + 5.0 * (2.0 > 3.0 / (4.0 + 5.0));
+    var x = x(ls);
+    var k = x + 5.0;
+    l = x + 5.0 * (2.0 > 3.0 / (4.0 + 5.0));
+    x = ifj.string("xd");
+    ifj.write(l);
+    if( (x + 5.0) * (2.0 > 3.0 / (4.0 + 5.0)) ){}
+    while( (x + 5.0) * (2.0 > 3.0 / (4.0 + 5.0)) ) {}
+    
+    return write("xd");
 }
