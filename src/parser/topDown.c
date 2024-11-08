@@ -21,7 +21,7 @@ void syntax_error(){
 
 //Compare current token type and expected token type. Get the next token if they match. 
 void expect(TokenType type){
-    //printf("Checking: type: %s val: %s\n", tokenName[current_token->type], current_token->value);
+    // printf("Checking: type: %s val: %s\n", tokenName[current_token->type], current_token->value);
     if(current_token->type == type){
         next_token();
     } else {
@@ -209,7 +209,7 @@ void statement_rule(){
     switch (current_token->type){
         case TOKEN_CONST:
         case TOKEN_VAR:
-            printf("var\n");
+            // printf("var\n");
             //printf("Checking token: type: %s val: %s\n", tokenName[current_token->type], current_token->value);
             var_rule();
             break;
