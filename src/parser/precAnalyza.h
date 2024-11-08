@@ -1,0 +1,4 @@
+#ifndef PRECANALYZA_H
+#define PRECANALYZA_H
+
+#endif //PRECANALYZA_H
