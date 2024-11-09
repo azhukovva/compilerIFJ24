@@ -430,7 +430,7 @@ void expression_opt_rule(){
     
 //      current_token = init_token();
 //      next_token();
-// //     printf("Token: %s, %s\n", tokenName[current_token->type], current_token->value);
+//     // printf("Token: %s, %s\n", tokenName[current_token->type], current_token->value);
 //      program_rule();
 //      if(encoutered_main){
 //         printf("yep\n");
