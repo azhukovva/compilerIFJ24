@@ -43,6 +43,7 @@ const char *tokenName[] = {
     "TOKEN_RIGHT_BRACKET",
     "TOKEN_LEFT_BRACE",
     "TOKEN_RIGHT_BRACE",
+    "TOKEN_PIPE",
     "TOKEN_ARROW",
     "TOKEN_COMMA",
     "TOKEN_COLON",
@@ -362,25 +363,26 @@ void get_token(Token *token)
                     break;
                     // REVIEW
                 case '/':
-                    // c = read_char(stdin);
-                    // if (c == '/')
-                    // { // 1-line comment
-                    //     state = sCommLine;
-                    //     break;
-                    // }
-                    // else if (c == '*')
-                    // { // block-comment
-                    //     state = sCommBlock1;
-                    //     break;
-                    // }
-                    // else
-                    // {
-                    //     ungetc(c, stdin);
-                    //     token->type = TOKEN_DIVIDE;
-                    //     token->value = "/";
-                    //     isToken = 1;
-                    //     break;
-                    // }
+                    c = read_char(stdin);
+                    if (c == '/')
+                    {
+                        state = sCommLine;
+                        break;
+                    }
+                    else
+                    {
+                        ungetc(c, stdin);
+                        token->type = TOKEN_DIVIDE;
+                        token->value = "/";
+                        isToken = 1;
+                        break;
+                    }
+
+                case '|':
+                    token->type = TOKEN_PIPE;
+                    token->value = "|";
+                    isToken = 1;
+                    break;
 
                 case '*':
                     token->type = TOKEN_MULTIPLY;
@@ -424,10 +426,9 @@ void get_token(Token *token)
                     // TODO
                     if (c == 'i')
                     {
-                        
+
                         if (match_string("32", stdin))
                         {
-                
                             token->type = TOKEN_I32_OPT;
                             token->value = "?i32";
                             isToken = true;
@@ -500,32 +501,30 @@ void get_token(Token *token)
 
         case sLiter_Int:
             while (is_digit(c))
-            {  
+            {
                 token->type = TOKEN_INT;
                 append_string(&str, c);
                 c = read_char(stdin);
             }
             if (c == '.')
-            {             
-                       
+            {
                 token->type = TOKEN_FLOAT; // REVIEW - need here?
                 state = sLiter_Float;
                 append_string(&str, c);
-                 c = read_char(stdin); // Read the next character after '.'
                 break;
             }
             if (c == 'e' || c == 'E')
             { // get 'e' so it can be number with exponential
                 state = sExp;
                 append_string(&str, c);
-                 c = read_char(stdin); // Read the next character after '.'
+                c = read_char(stdin); // Read the next character after '.'
                 break;
             }
             else
             {
                 if (is_letter(c) || c == '_' || c == '?')
                     error_handler(ERR_LEX, token);
-                // token->type = TOKEN_INT; //REVIEW 
+                // token->type = TOKEN_INT; //REVIEW
                 token->value = str.str;
                 isToken = 1;
                 ungetc(c, stdin);
@@ -587,7 +586,7 @@ void get_token(Token *token)
                 {
                     // Pokud je po klíčovém slově typů `i32` nebo `f64` otazník, jde o `typNil`
                     append_string(&str, c);
-                    token->type = key + 1; 
+                    token->type = key + 1;
                     token->value = str.str;
                     isToken = 1;
                     break;
@@ -605,7 +604,7 @@ void get_token(Token *token)
             // Kontrola pro jmenný prostor vestavěných funkcí IFJ24 (např. `ifj.write`)
             if (strncmp(str.str, "ifj", 3) == 0 && c == '.')
             {
-                append_string(&str, c); // Přidej tečku k identifikátoru
+                append_string(&str, c); // Přida tečku k identifikátoru
                 c = read_char(stdin);
                 while (is_letter(c) || is_digit(c) || c == '_')
                 {
@@ -726,16 +725,15 @@ void get_token(Token *token)
             { // move to case with Exponential
                 append_string(&str, c);
                 state = sFloat_Exp;
-                 c = read_char(stdin); // Read the next character after 'e' or 'E'
                 break;
             }
-            //REVIEW  крашилось при ; in the end of expression
-            // if is not a digit and not a whitespace/control character, it's an error
-            // else if (!is_digit(c) && c > 32){
-            //     printf("Error: %c\n", c);
-            //     error_handler(ERR_LEX, token);
-            //     break;
-            // }
+            // REVIEW  крашилось при ; in the end of expression
+            //  if is not a digit and not a whitespace/control character, it's an error
+            //  else if (!is_digit(c) && c > 32){
+            //      printf("Error: %c\n", c);
+            //      error_handler(ERR_LEX, token);
+            //      break;
+            //  }
             else
             {
                 token->type = TOKEN_FLOAT; // get token of float number
