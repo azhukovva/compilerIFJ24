@@ -523,6 +523,7 @@ void get_token(Token *token)
                 if (is_letter(c) || c == '_' || c == '?')
                     error_handler(ERR_LEX, token);
                 // token->type = TOKEN_INT; //REVIEW
+                token->type = TOKEN_INT;
                 token->value = str.str;
                 isToken = 1;
                 ungetc(c, stdin);
