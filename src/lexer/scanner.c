@@ -72,7 +72,9 @@ const char *tokenName[] = {
     "TOKEN_VOID",
     "TOKEN_WHILE",
     "TOKEN_CONST",
-    "TOKEN_NULL"};
+    "TOKEN_NULL",
+    "TOKEN_END",
+    "TOKEN_E"};
 
 TokenType is_keyword(char *s) // func to check if Ident is Keyword
 {
@@ -831,18 +833,18 @@ void get_token(Token *token)
     }
 }
 
-int main()
-{
-    Token *token = init_token();
-    char c;
-    while ((c = read_char(stdin)) != EOF)
-    {
-        ungetc(c, stdin);
-        get_token(token);
-        print_token(token);
-    }
-    free(token);
-    return 0;
-}
+// int main()
+// {
+//     Token *token = init_token();
+//     char c;
+//     while ((c = read_char(stdin)) != EOF)
+//     {
+//         ungetc(c, stdin);
+//         get_token(token);
+//         print_token(token);
+//     }
+//     free(token);
+//     return 0;
+// }
 
 #endif

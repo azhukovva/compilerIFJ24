@@ -70,12 +70,16 @@ typedef enum
     TOKEN_U8,
     TOKEN_U8_OPT,
 
-    TOKEN_PUB,
-    TOKEN_RETURN,
-    TOKEN_VOID,
-    TOKEN_WHILE,
-    TOKEN_CONST,
-    TOKEN_NULL,
+ TOKEN_PUB,
+ TOKEN_RETURN,
+ TOKEN_VOID,
+ TOKEN_WHILE,
+ TOKEN_CONST,
+ TOKEN_NULL,
+
+ // ADDITIONAL
+ TOKEN_END,
+ TOKEN_E
 } TokenType;
 
 extern const char *tokenName[];

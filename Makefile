@@ -9,6 +9,7 @@ ERRORS_DIR = src/errors
 PARSER_DIR = src/parser
 STACK_DIR = src/stack
 SYMBOL_TABLE_DIR = src/symTable
+EXPRESSION_DIR = src/expression
 
 OBJ_DIR = obj
 
@@ -18,8 +19,10 @@ SRCS = $(LEXER_DIR)/scanner.c \
        $(ERRORS_DIR)/error.c \
        $(PARSER_DIR)/parser.c \
        $(PARSER_DIR)/topDown.c \
+       $(PARSER_DIR)/bottomUp.c \
        $(STACK_DIR)/stack.c \
-       $(SYMBOL_TABLE_DIR)/symTable.c
+       $(SYMBOL_TABLE_DIR)/symTable.c \
+       $(EXPRESSION_DIR)/expression.c
 
 
 # Object files
