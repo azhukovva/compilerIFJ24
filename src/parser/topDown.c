@@ -7,7 +7,7 @@
 //Current token pointer
 Token *current_token;
 bool encoutered_main = false;
-bool encountered_return = false;
+
 
 //Get the next token
 void next_token(){
@@ -218,9 +218,6 @@ bool is_statement_start(TokenType type){
 }
 
 void statement_rule(){
-    if(encountered_return){
-        syntax_error();
-    }
     switch (current_token->type){
         case TOKEN_CONST:
         case TOKEN_VAR:
@@ -394,9 +391,6 @@ void assigment_rule(){
 //<function_call> ::= ( <Arguments> );
 void function_call_rule(){
     printf("function call\n");
-    if(encountered_return){
-        syntax_error();
-    }
     expect(TOKEN_LEFT_BRACKET);
     arguments_rule();
     expect(TOKEN_RIGHT_BRACKET);
@@ -574,14 +568,12 @@ void return_statement_rule(){
     expect(TOKEN_RETURN);
     if(current_token->type == TOKEN_SEMICOLON){
         expect(TOKEN_SEMICOLON);
-        encountered_return = true;
         return;
     }
     if(current_token->type == TOKEN_IDENTIFIER_FUNC){
         printf("here\n");
         expect(TOKEN_IDENTIFIER_FUNC);
         function_call_rule();
-        encountered_return = true;
         return;
     }
 
@@ -595,7 +587,6 @@ void return_statement_rule(){
     }
     if(current_token->type == TOKEN_LEFT_BRACKET){
         function_call_rule();
-        encountered_return = true;
         return;
     }
     Expression *expr = (Expression *)malloc(sizeof(Expression));
@@ -623,24 +614,23 @@ void return_statement_rule(){
     parse_expression(expr);
 
     expect(TOKEN_SEMICOLON);
-    encountered_return = true;
 }
 
 
 
-int main(){
+// int main(){
 
-     current_token = init_token();
-     next_token();
-//     printf("Token: %s, %s\n", tokenName[current_token->type], current_token->value);
-     program_rule();
-     if(encoutered_main){
-        printf("yep\n");
-     } else{
-        syntax_error();
-     }
+//      current_token = init_token();
+//      next_token();
+//     //     printf("Token: %s, %s\n", tokenName[current_token->type], current_token->value);
+//      program_rule();
+//      if(encoutered_main){
+//         printf("yep\n");
+//      } else{
+//         syntax_error();
+//      }
 
-     //free(current_token->value);
-     free(current_token);
-     return 0;
- }
+//      //free(current_token->value);
+//      free(current_token);
+//      return 0;
+//  }

@@ -186,7 +186,6 @@ bool match_string(const char *target, FILE *input)
         string[len] = '\0';
         return strcmp(string, target) == 0; // Returns true if equal
     }
-
     return false; // Return false if reading fails
 }
 
@@ -420,6 +419,17 @@ void get_token(Token *token)
                     ungetc(c, stdin); // Is a single exclamation mark -> get back
                     error_handler(ERR_LEX, token);
                     break;
+
+                case '[':
+                    if (match_string("]u8", stdin))
+                    {
+                        token->type = TOKEN_U8;
+                        token->value = "[]u8";
+                        isToken = true;
+                        break;
+                    }
+                    else
+                        error_handler(ERR_LEX, token);
                 case '?':
                     state = sQuestion;
                     c = read_char(stdin);
@@ -453,9 +463,11 @@ void get_token(Token *token)
                     {
                         if (match_string("]u8", stdin))
                         {
+
                             token->type = TOKEN_U8_OPT;
                             token->value = "?[]u8";
                             isToken = true;
+                            break;
                         }
                         else
                             error_handler(ERR_LEX, token);
@@ -477,7 +489,10 @@ void get_token(Token *token)
 
                 default:
                     if (c > 32)
+                    {
+                        printf("Error: %c\n", c);
                         error_handler(ERR_LEX, token);
+                    }
                     break;
                 }
                 break;
@@ -603,20 +618,35 @@ void get_token(Token *token)
                 }
             }
             // Kontrola pro jmenný prostor vestavěných funkcí IFJ24 (např. `ifj.write`)
-            if (strncmp(str.str, "ifj", 3) == 0 && c == '.')
+            if (strncmp(str.str, "ifj", 3) == 0)
             {
-                append_string(&str, c); // Přida tečku k identifikátoru
-                c = read_char(stdin);
-                while (is_letter(c) || is_digit(c) || c == '_')
+                while (isspace(c))
                 {
-                    append_string(&str, c); // Přidá část názvu funkce za tečkou
                     c = read_char(stdin);
                 }
-                ungetc(c, stdin);
-                token->type = TOKEN_IDENTIFIER_FUNC;
-                token->value = str.str;
-                isToken = 1;
-                break;
+
+                if (c == '.')
+                {
+                    append_string(&str, c); // Prida tecku
+                    c = read_char(stdin);
+
+                    while (isspace(c))
+                    {
+                        c = read_char(stdin);
+                    }
+
+                    while (is_letter(c) || is_digit(c) || c == '_')
+                    {
+                        append_string(&str, c);
+                        c = read_char(stdin);
+                    }
+                    ungetc(c, stdin);
+                    printf("IFJ24 function: %s\n", str.str);
+                    token->type = TOKEN_IDENTIFIER_FUNC;
+                    token->value = str.str;
+                    isToken = 1;
+                    break;
+                }
             }
             ungetc(c, stdin); // identificator isnt keyword
             token->type = TOKEN_IDENTIFIER;
@@ -625,7 +655,7 @@ void get_token(Token *token)
             break;
 
         case sLiter:
-            if ((c >= 35 || c == 32 || c == 33) && c != '\\')
+            if ((c >= 35 || c == 32 || c == 33) && c != '\\' && c != '"')
             {
                 append_string(&str, c);
                 state = sLiterContent;
@@ -633,6 +663,7 @@ void get_token(Token *token)
             }
             if (c == '"')
             {
+                ungetc(c, stdin);
                 state = sLiterContent;
                 break;
             }
@@ -643,10 +674,19 @@ void get_token(Token *token)
                 break;
             }
             else
+            {
                 error_handler(ERR_LEX, token);
-            break;
+                break;
+            }
             // REVIEW
         case sLiterContent:
+            if (c == '"')
+            {
+                token->type = TOKEN_STRING;
+                token->value = str.str; // This will be an empty string
+                isToken = 1;
+                break;
+            }
             while ((c >= 35 || c == 32 || c == 33) && c != '\\')
             {
                 append_string(&str, c);
@@ -660,6 +700,7 @@ void get_token(Token *token)
             }
             if (c == '"')
             {
+                state = sLiter;
                 token->type = TOKEN_STRING;
                 token->value = str.str;
                 isToken = 1;
@@ -792,18 +833,18 @@ void get_token(Token *token)
     }
 }
 
-// int main()
-// {
-//     Token *token = init_token();
-//     char c;
-//     while ((c = read_char(stdin)) != EOF)
-//     {
-//         ungetc(c, stdin);
-//         get_token(token);
-//         print_token(token);
-//     }
-//     free(token);
-//     return 0;
-// }
+int main()
+{
+    Token *token = init_token();
+    char c;
+    while ((c = read_char(stdin)) != EOF)
+    {
+        ungetc(c, stdin);
+        get_token(token);
+        print_token(token);
+    }
+    free(token);
+    return 0;
+}
 
 #endif
