@@ -620,7 +620,6 @@ void get_token(Token *token)
             // Kontrola pro jmenný prostor vestavěných funkcí IFJ24 (např. `ifj.write`)
             if (strncmp(str.str, "ifj", 3) == 0)
             {
-                c = read_char(stdin);
                 while (isspace(c))
                 {
                     c = read_char(stdin);
@@ -642,6 +641,7 @@ void get_token(Token *token)
                         c = read_char(stdin);
                     }
                     ungetc(c, stdin);
+                    printf("IFJ24 function: %s\n", str.str);
                     token->type = TOKEN_IDENTIFIER_FUNC;
                     token->value = str.str;
                     isToken = 1;
@@ -833,18 +833,18 @@ void get_token(Token *token)
     }
 }
 
-// int main()
-// {
-//     Token *token = init_token();
-//     char c;
-//     while ((c = read_char(stdin)) != EOF)
-//     {
-//         ungetc(c, stdin);
-//         get_token(token);
-//         print_token(token);
-//     }
-//     free(token);
-//     return 0;
-// }
+int main()
+{
+    Token *token = init_token();
+    char c;
+    while ((c = read_char(stdin)) != EOF)
+    {
+        ungetc(c, stdin);
+        get_token(token);
+        print_token(token);
+    }
+    free(token);
+    return 0;
+}
 
 #endif
