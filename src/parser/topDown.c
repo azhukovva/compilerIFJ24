@@ -21,11 +21,19 @@ void syntax_error(){
 
 //i think we'll be handling comments in the expect function
 //Compare current token type and expected token type. Get the next token if they match.
+void skip_comments(){
+    while(current_token->type == TOKEN_COMMENT){
+        next_token();
+    }
+}
 void expect(TokenType type){
     printf("Checking: type: %s val: %s\n", tokenName[current_token->type], current_token->value);
+    //if we get a comment we skip it and get the next token
+    skip_comments();
     if(current_token->type == type){
         next_token();
     } else {
+        printf("Expected: %s\n", tokenName[type]);
         syntax_error();
     }
 }
@@ -77,6 +85,7 @@ void functions_rule(){
 
 // <functions_tail> ::= <function> <functions_tail> | eps
 void functions_tail_rule(){
+    skip_comments();
     if(current_token->type == TOKEN_PUB){
         function_rule();
         functions_tail_rule();
@@ -116,6 +125,7 @@ void param_list_rule(){
 
 // <Params> ::= <Param> <Param_tail> | eps
 void params_rule(){
+    skip_comments();
     if(current_token->type == TOKEN_IDENTIFIER){
         param_rule();
         param_tail_rule();
@@ -125,6 +135,7 @@ void params_rule(){
 // <Param_tail> ::= , <Param> <Param_tail> | eps
 void param_tail_rule(){
     // ,
+    skip_comments();
     if(current_token->type == TOKEN_COMMA){
         expect(TOKEN_COMMA);
         param_rule();
@@ -176,6 +187,7 @@ void base_type_rule(){
 
 // <Return_type> ::= <Optional_question_mark> <Base_type>
 void return_type_rule(){
+    skip_comments();
     if(current_token->type == TOKEN_VOID){
         expect(TOKEN_VOID);
     } else {
@@ -186,12 +198,14 @@ void return_type_rule(){
 // <Block> ::= { <Statements> } 
 void block_rule(){
     expect(TOKEN_LEFT_BRACE);
+    printf("entering statements\n");
     statements_rule();
     expect(TOKEN_RIGHT_BRACE);
 }
 
 // <Statements> ::= <Statement> <Statements> | eps
 void statements_rule(){
+    skip_comments();
     while(is_statement_start(current_token->type)){
         statement_rule();
     }
@@ -293,6 +307,7 @@ void var_rule(){
 
 //<Var_mode> ::= const | var
 void var_mode_rule(){
+    skip_comments();
     if(current_token->type == TOKEN_CONST){
         expect(TOKEN_CONST);
     } else if(current_token->type == TOKEN_VAR){
@@ -304,6 +319,7 @@ void var_mode_rule(){
 
 //<Var_type> ::= : <Base_type> | eps
 void var_type_rule(){
+    skip_comments();
     if(current_token->type == TOKEN_COLON){
         expect(TOKEN_COLON);
         param_type_rule();
@@ -390,8 +406,10 @@ void function_call_rule(){
 
 //<Arguments> ::= <Argument> <Arguments_tail>
 void arguments_rule(){
-    argument_rule();
-    arguments_tail_rule();
+    if(current_token->type != TOKEN_RIGHT_BRACKET){
+        argument_rule();
+        arguments_tail_rule();
+    }
 }
 
 //<Arguments_tail> ::= , <Argument> <Arguments_tail> | eps
@@ -443,7 +461,7 @@ void conditionals_rule(){
         error_exit(ERR_INTERNAL);
     }
     init_expression(expr);
-    while(current_token->type != TOKEN_RIGHT_BRACE){
+    while(current_token->type != TOKEN_RIGHT_BRACE || current_token->type != TOKEN_PIPE){
         if(current_token->type == TOKEN_EOF){
             syntax_error();
         }
@@ -454,7 +472,7 @@ void conditionals_rule(){
             }
             *token_copy = *current_token;
             expect(TOKEN_RIGHT_BRACKET);
-            if(current_token->type == TOKEN_LEFT_BRACE){
+            if(current_token->type == TOKEN_LEFT_BRACE || current_token->type == TOKEN_PIPE){
                 break;
             }
             add_element(expr, token_copy);
@@ -480,12 +498,11 @@ void conditionals_rule(){
 
 //<Optional_null> ::= |id| | eps
 void optional_null_rule(){
-  //  we can't process pipes yet
-  //  if(current_token->type == TOKEN_PIPE){
-  //      expect(TOKEN_PIPE);
-  //      expect(TOKEN_IDENTIFIER);
-  //      expect(TOKEN_PIPE);
-  //  }
+   if(current_token->type == TOKEN_PIPE){
+       expect(TOKEN_PIPE);
+       expect(TOKEN_IDENTIFIER);
+       expect(TOKEN_PIPE);
+   }
 }
 
 //<Optional_else> ::= else <else_body> | eps
@@ -498,10 +515,12 @@ void optional_else_rule(){
 //<else_body> ::= <Block> | <Conditionals>
 void else_body_rule(){
     if(current_token->type == TOKEN_LEFT_BRACE){
+        printf("else block\n");
         block_rule();
     } else if(current_token->type == TOKEN_IF){
         conditionals_rule();
     } else {
+        printf("else body error\n");
         syntax_error();
     }
 }

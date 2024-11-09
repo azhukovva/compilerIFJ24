@@ -1,13 +1,14 @@
 const ifj = @import("ifj24.zig");
-// Hlavni telo programu - funkce main pub fn main() void {
+// Hlavni telo programu - funkce main 
+pub fn main() void {
 ifj.write("Zadejte cislo pro vypocet faktorialu\n"); const a = ifj.readi32();
 
 if (a) |val| {
-if (val < 0) {
+if (val < 0.5) {
 ifj.write("Faktorial "); ifj.write(val);
 ifj.write(" nelze spocitat\n"); } else {
 var d: f64 = ifj.i2f(val); var vysl: f64 = 1.2;
-while (d > 0) {
+while (d > 0.5) {
                 vysl = vysl * d;
 d = d - 1.0; }
 ifj.write("Vysledek: "); ifj.write(vysl); ifj.write(" = "); const vysl_i32 = ifj.f2i(vysl);
