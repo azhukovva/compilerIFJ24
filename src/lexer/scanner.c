@@ -679,7 +679,7 @@ void get_token(Token *token)
             else
                 error_handler(ERR_LEX, token);
             break;
-
+            break;
         case sHex:
             if (c == '{')
             {
