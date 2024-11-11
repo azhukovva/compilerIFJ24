@@ -450,6 +450,7 @@ void conditionals_rule(){
     expect(TOKEN_IF);
     expect(TOKEN_LEFT_BRACKET);
     //заглушка
+    printf("conditionals\n");
     Expression *expr = (Expression *)malloc(sizeof(Expression));
     if(expr == NULL){
         error_exit(ERR_INTERNAL);
@@ -530,7 +531,7 @@ void while_statement_rule(){
         error_exit(ERR_INTERNAL);
     }
     init_expression(expr);
-    while(current_token->type != TOKEN_RIGHT_BRACE){
+    while(current_token->type != TOKEN_RIGHT_BRACE || current_token->type != TOKEN_PIPE){
         if(current_token->type == TOKEN_EOF){
             syntax_error();
         }
@@ -541,7 +542,7 @@ void while_statement_rule(){
             }
             *token_copy = *current_token;
             expect(TOKEN_RIGHT_BRACKET);
-            if(current_token->type == TOKEN_LEFT_BRACE){
+            if(current_token->type == TOKEN_LEFT_BRACE || current_token->type == TOKEN_PIPE){
                 break;
             }
             add_element(expr, token_copy);

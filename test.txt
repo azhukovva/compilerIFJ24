@@ -10,10 +10,12 @@ ifj.write("Zadejte serazenou posloupnost malych pismen a-h:\n"); var newInput = 
 var all: []u8 = ifj.string(" ");
 while (newInput) |inpOK| {
 const abcdefgh = ifj.string("abcdefgh");
-const strcmpResult = ifj.strcmp(inpOK, abcdefgh); if (strcmpResult == 0) {
+const strcmpResult = ifj.strcmp(inpOK, abcdefgh); 
+if (strcmpResult == 0) {
 ifj.write("Spravne zadano!\n");
 ifj.write(all); // vypsat spojene nepodarene vstupy newInput = null; // misto break;
 } else {
 ifj.write("Spatne zadana posloupnost, zkuste znovu:\n"); all = ifj.concat(all, inpOK); // spojuji neplatne vstupy newInput = ifj.readstr();
-} }
+} 
+}
 }
