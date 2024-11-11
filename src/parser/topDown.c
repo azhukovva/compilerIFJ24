@@ -5,13 +5,22 @@
 // extern const char *tokenName[];
  
 //Current token pointer
-Token *current_token;
+Token *all_tokens[100000];
+int token_index = 0;
 bool encoutered_main = false;
-
 
 //Get the next token
 void next_token(){
-    get_token(current_token);
+    token_index++;
+}
+void save_token(Token *current_token){
+    Token *token_copy = (Token *)malloc(sizeof(Token));
+    if (token_copy == NULL) {
+        error_exit(ERR_INTERNAL);
+    }
+    *token_copy = *current_token;
+    all_tokens[token_index] = token_copy;
+    token_index++;
 }
 
 //Error handling 
@@ -22,15 +31,15 @@ void syntax_error(){
 //i think we'll be handling comments in the expect function
 //Compare current token type and expected token type. Get the next token if they match.
 void skip_comments(){
-    while(current_token->type == TOKEN_COMMENT){
+    while(all_tokens[token_index]->type == TOKEN_COMMENT){
         next_token();
     }
 }
 void expect(TokenType type){
-    printf("Checking: type: %s val: %s\n", tokenName[current_token->type], current_token->value);
+    printf("Checking: type: %s val: %s\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value);
     //if we get a comment we skip it and get the next token
     skip_comments();
-    if(current_token->type == type){
+    if(all_tokens[token_index]->type == type){
         next_token();
     } else {
         printf("Expected: %s\n", tokenName[type]);
@@ -40,8 +49,8 @@ void expect(TokenType type){
 
 //Check if the id of token value matches expected one
 void expect_id(char *id_to_check){
-    //printf("type: %s val: %s id_to_check:%s\n", tokenName[current_token->type], current_token->value, id_to_check);
-    if(current_token->type == TOKEN_IDENTIFIER && !strcmp(current_token->value, id_to_check)){
+    //printf("type: %s val: %s id_to_check:%s\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value, id_to_check);
+    if(all_tokens[token_index]->type == TOKEN_IDENTIFIER && !strcmp(all_tokens[token_index]->value, id_to_check)){
         next_token();
     } else {
         syntax_error();
@@ -50,8 +59,8 @@ void expect_id(char *id_to_check){
 
 //Check if the string in token matches expected one
 void expect_string(char *string_to_check){
-    //printf("type: %s val: %s id_to_check:%s\n", tokenName[current_token->type], current_token->value, string_to_check);
-    if(current_token->type == TOKEN_STRING && !strcmp(current_token->value, string_to_check)){
+    //printf("type: %s val: %s id_to_check:%s\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value, string_to_check);
+    if(all_tokens[token_index]->type == TOKEN_STRING && !strcmp(all_tokens[token_index]->value, string_to_check)){
         next_token();
     } else {
         syntax_error();
@@ -86,7 +95,7 @@ void functions_rule(){
 // <functions_tail> ::= <function> <functions_tail> | eps
 void functions_tail_rule(){
     skip_comments();
-    if(current_token->type == TOKEN_PUB){
+    if(all_tokens[token_index]->type == TOKEN_PUB){
         function_rule();
         functions_tail_rule();
     }
@@ -96,7 +105,7 @@ void functions_tail_rule(){
 void function_rule(){
     expect(TOKEN_PUB);
     expect(TOKEN_FN);
-    if(!strcmp(current_token->value, "main")){
+    if(!strcmp(all_tokens[token_index]->value, "main")){
         main_func_rule();
     } else {
         expect(TOKEN_IDENTIFIER);
@@ -126,7 +135,7 @@ void param_list_rule(){
 // <Params> ::= <Param> <Param_tail> | eps
 void params_rule(){
     skip_comments();
-    if(current_token->type == TOKEN_IDENTIFIER){
+    if(all_tokens[token_index]->type == TOKEN_IDENTIFIER){
         param_rule();
         param_tail_rule();
     }
@@ -136,7 +145,7 @@ void params_rule(){
 void param_tail_rule(){
     // ,
     skip_comments();
-    if(current_token->type == TOKEN_COMMA){
+    if(all_tokens[token_index]->type == TOKEN_COMMA){
         expect(TOKEN_COMMA);
         param_rule();
         param_tail_rule();
@@ -160,7 +169,7 @@ void param_type_rule(){
 
 // <Base_type> ::= i32 | f64 | []u8
 void base_type_rule(){
-    switch (current_token->type)
+    switch (all_tokens[token_index]->type)
     {
     case TOKEN_I32:
         expect(TOKEN_I32);
@@ -188,7 +197,7 @@ void base_type_rule(){
 // <Return_type> ::= <Optional_question_mark> <Base_type>
 void return_type_rule(){
     skip_comments();
-    if(current_token->type == TOKEN_VOID){
+    if(all_tokens[token_index]->type == TOKEN_VOID){
         expect(TOKEN_VOID);
     } else {
         base_type_rule();
@@ -206,7 +215,7 @@ void block_rule(){
 // <Statements> ::= <Statement> <Statements> | eps
 void statements_rule(){
     skip_comments();
-    while(is_statement_start(current_token->type)){
+    while(is_statement_start(all_tokens[token_index]->type)){
         statement_rule();
     }
 }
@@ -218,7 +227,7 @@ bool is_statement_start(TokenType type){
 }
 
 void statement_rule(){
-    switch (current_token->type){
+    switch (all_tokens[token_index]->type){
         case TOKEN_CONST:
         case TOKEN_VAR:
             printf("var\n");
@@ -254,7 +263,7 @@ void var_rule(){
     var_type_rule();
     expect(TOKEN_ASSIGN);
         //inbuilt function call
-    if(current_token->type == TOKEN_IDENTIFIER_FUNC){
+    if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
         printf("here\n");
         expect(TOKEN_IDENTIFIER_FUNC);
         function_call_rule();
@@ -266,11 +275,11 @@ void var_rule(){
         if (token_copy == NULL) {
             error_exit(ERR_INTERNAL);
         }
-    *token_copy = *current_token;
-    if(current_token->type == TOKEN_IDENTIFIER){
+    *token_copy = *all_tokens[token_index];
+    if(all_tokens[token_index]->type == TOKEN_IDENTIFIER){
         expect(TOKEN_IDENTIFIER);
     }
-    if(current_token->type == TOKEN_LEFT_BRACKET){
+    if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET){
         function_call_rule();
         return;
     }
@@ -280,11 +289,11 @@ void var_rule(){
     }
     init_expression(expr);
 	if (token_copy->type == TOKEN_IDENTIFIER) add_element(expr, token_copy);
-    while(current_token->type != TOKEN_SEMICOLON){
-        if(current_token->type == TOKEN_EOF){
+    while(all_tokens[token_index]->type != TOKEN_SEMICOLON){
+        if(all_tokens[token_index]->type == TOKEN_EOF){
             syntax_error();
         }
-        add_element(expr, current_token);
+        add_element(expr, all_tokens[token_index]);
         next_token();
     }
 	Token *end_token = (Token *)malloc(sizeof(Token));
@@ -305,9 +314,9 @@ void var_rule(){
 //<Var_mode> ::= const | var
 void var_mode_rule(){
     skip_comments();
-    if(current_token->type == TOKEN_CONST){
+    if(all_tokens[token_index]->type == TOKEN_CONST){
         expect(TOKEN_CONST);
-    } else if(current_token->type == TOKEN_VAR){
+    } else if(all_tokens[token_index]->type == TOKEN_VAR){
         expect(TOKEN_VAR);
     } else {
         syntax_error();
@@ -317,7 +326,7 @@ void var_mode_rule(){
 //<Var_type> ::= : <Base_type> | eps
 void var_type_rule(){
     skip_comments();
-    if(current_token->type == TOKEN_COLON){
+    if(all_tokens[token_index]->type == TOKEN_COLON){
         expect(TOKEN_COLON);
         param_type_rule();
     }
@@ -325,7 +334,7 @@ void var_type_rule(){
 //<assigment> ::= id = <Expression> ;
 void assigment_rule(){
     //inbuilt function call
-    if(current_token->type == TOKEN_IDENTIFIER_FUNC){
+    if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
         expect(TOKEN_IDENTIFIER_FUNC);;
         function_call_rule();
         return;
@@ -333,14 +342,14 @@ void assigment_rule(){
     expect(TOKEN_IDENTIFIER);
 
     //if the identifier was a user function identifier
-    if(current_token->type == TOKEN_LEFT_BRACKET){
+    if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET){
         function_call_rule();
         return;
     }
     expect(TOKEN_ASSIGN);
     
     //inbuilt function call
-    if(current_token->type == TOKEN_IDENTIFIER_FUNC){
+    if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
         printf("here\n");
         expect(TOKEN_IDENTIFIER_FUNC);
         function_call_rule();
@@ -352,11 +361,11 @@ void assigment_rule(){
         if (token_copy == NULL) {
             error_exit(ERR_INTERNAL);
         }
-    *token_copy = *current_token;
-    if(current_token->type == TOKEN_IDENTIFIER){
+    *token_copy = *all_tokens[token_index];
+    if(all_tokens[token_index]->type == TOKEN_IDENTIFIER){
         expect(TOKEN_IDENTIFIER);
     }
-    if(current_token->type == TOKEN_LEFT_BRACKET){
+    if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET){
         function_call_rule();
         return;
     }
@@ -366,11 +375,11 @@ void assigment_rule(){
     }
     init_expression(expr);
 	if (token_copy->type == TOKEN_IDENTIFIER) add_element(expr, token_copy);
-    while(current_token->type != TOKEN_SEMICOLON){
-        if(current_token->type == TOKEN_EOF){
+    while(all_tokens[token_index]->type != TOKEN_SEMICOLON){
+        if(all_tokens[token_index]->type == TOKEN_EOF){
             syntax_error();
         }
-        add_element(expr, current_token);
+        add_element(expr, all_tokens[token_index]);
         next_token();
     }
 	Token *end_token = (Token *)malloc(sizeof(Token));
@@ -400,7 +409,7 @@ void function_call_rule(){
 
 //<Arguments> ::= <Argument> <Arguments_tail>
 void arguments_rule(){
-    if(current_token->type != TOKEN_RIGHT_BRACKET){
+    if(all_tokens[token_index]->type != TOKEN_RIGHT_BRACKET){
         argument_rule();
         arguments_tail_rule();
     }
@@ -408,9 +417,9 @@ void arguments_rule(){
 
 //<Arguments_tail> ::= , <Argument> <Arguments_tail> | eps
 void arguments_tail_rule(){
-    if(current_token->type == TOKEN_COMMA){
+    if(all_tokens[token_index]->type == TOKEN_COMMA){
         expect(TOKEN_COMMA);
-        if(current_token->type == TOKEN_RIGHT_BRACKET){ // in case there is a comma before the last argument
+        if(all_tokens[token_index]->type == TOKEN_RIGHT_BRACKET){ // in case there is a comma before the last argument
             return;
         }
         argument_rule();
@@ -420,7 +429,7 @@ void arguments_tail_rule(){
 
 //<Argument> ::= id | <Literal>
 void argument_rule(){
-    if(current_token->type == TOKEN_IDENTIFIER){
+    if(all_tokens[token_index]->type == TOKEN_IDENTIFIER){
         expect(TOKEN_IDENTIFIER);
     } else {
         literal_rule();
@@ -429,7 +438,7 @@ void argument_rule(){
 
 //<Literal> ::= int | float | string
 void literal_rule(){
-    switch (current_token->type) {
+    switch (all_tokens[token_index]->type) {
     case TOKEN_INT:
         expect(TOKEN_INT);
         break;
@@ -456,23 +465,23 @@ void conditionals_rule(){
         error_exit(ERR_INTERNAL);
     }
     init_expression(expr);
-    while(current_token->type != TOKEN_RIGHT_BRACE || current_token->type != TOKEN_PIPE){
-        if(current_token->type == TOKEN_EOF){
+    while(all_tokens[token_index]->type != TOKEN_RIGHT_BRACE || all_tokens[token_index]->type != TOKEN_PIPE){
+        if(all_tokens[token_index]->type == TOKEN_EOF){
             syntax_error();
         }
-        if(current_token->type == TOKEN_RIGHT_BRACKET){
+        if(all_tokens[token_index]->type == TOKEN_RIGHT_BRACKET){
             Token *token_copy = (Token *)malloc(sizeof(Token));
             if (token_copy == NULL) {
                 error_exit(ERR_INTERNAL);
             }
-            *token_copy = *current_token;
+            *token_copy = *all_tokens[token_index];
             expect(TOKEN_RIGHT_BRACKET);
-            if(current_token->type == TOKEN_LEFT_BRACE || current_token->type == TOKEN_PIPE){
+            if(all_tokens[token_index]->type == TOKEN_LEFT_BRACE || all_tokens[token_index]->type == TOKEN_PIPE){
                 break;
             }
             add_element(expr, token_copy);
         }
-        add_element(expr, current_token);
+        add_element(expr, all_tokens[token_index]);
         next_token();
     }
     Token *end_token = (Token *)malloc(sizeof(Token));
@@ -493,7 +502,7 @@ void conditionals_rule(){
 
 //<Optional_null> ::= |id| | eps
 void optional_null_rule(){
-   if(current_token->type == TOKEN_PIPE){
+   if(all_tokens[token_index]->type == TOKEN_PIPE){
        expect(TOKEN_PIPE);
        expect(TOKEN_IDENTIFIER);
        expect(TOKEN_PIPE);
@@ -502,17 +511,17 @@ void optional_null_rule(){
 
 //<Optional_else> ::= else <else_body> | eps
 void optional_else_rule(){
-    if(current_token->type == TOKEN_ELSE){
+    if(all_tokens[token_index]->type == TOKEN_ELSE){
         expect(TOKEN_ELSE);
         else_body_rule();
     }
 }
 //<else_body> ::= <Block> | <Conditionals>
 void else_body_rule(){
-    if(current_token->type == TOKEN_LEFT_BRACE){
+    if(all_tokens[token_index]->type == TOKEN_LEFT_BRACE){
         printf("else block\n");
         block_rule();
-    } else if(current_token->type == TOKEN_IF){
+    } else if(all_tokens[token_index]->type == TOKEN_IF){
         conditionals_rule();
     } else {
         printf("else body error\n");
@@ -531,23 +540,23 @@ void while_statement_rule(){
         error_exit(ERR_INTERNAL);
     }
     init_expression(expr);
-    while(current_token->type != TOKEN_RIGHT_BRACE || current_token->type != TOKEN_PIPE){
-        if(current_token->type == TOKEN_EOF){
+    while(all_tokens[token_index]->type != TOKEN_RIGHT_BRACE || all_tokens[token_index]->type != TOKEN_PIPE){
+        if(all_tokens[token_index]->type == TOKEN_EOF){
             syntax_error();
         }
-        if(current_token->type == TOKEN_RIGHT_BRACKET){
+        if(all_tokens[token_index]->type == TOKEN_RIGHT_BRACKET){
             Token *token_copy = (Token *)malloc(sizeof(Token));
             if (token_copy == NULL) {
                 error_exit(ERR_INTERNAL);
             }
-            *token_copy = *current_token;
+            *token_copy = *all_tokens[token_index];
             expect(TOKEN_RIGHT_BRACKET);
-            if(current_token->type == TOKEN_LEFT_BRACE || current_token->type == TOKEN_PIPE){
+            if(all_tokens[token_index]->type == TOKEN_LEFT_BRACE || all_tokens[token_index]->type == TOKEN_PIPE){
                 break;
             }
             add_element(expr, token_copy);
         }
-        add_element(expr, current_token);
+        add_element(expr, all_tokens[token_index]);
         next_token();
     }
     Token *end_token = (Token *)malloc(sizeof(Token));
@@ -567,11 +576,11 @@ void while_statement_rule(){
 //<return> ::= return <Expression_opt> ;
 void return_statement_rule(){
     expect(TOKEN_RETURN);
-    if(current_token->type == TOKEN_SEMICOLON){
+    if(all_tokens[token_index]->type == TOKEN_SEMICOLON){
         expect(TOKEN_SEMICOLON);
         return;
     }
-    if(current_token->type == TOKEN_IDENTIFIER_FUNC){
+    if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
         printf("here\n");
         expect(TOKEN_IDENTIFIER_FUNC);
         function_call_rule();
@@ -582,11 +591,11 @@ void return_statement_rule(){
         if (token_copy == NULL) {
             error_exit(ERR_INTERNAL);
         }
-    *token_copy = *current_token;
-    if(current_token->type == TOKEN_IDENTIFIER){
+    *token_copy = *all_tokens[token_index];
+    if(all_tokens[token_index]->type == TOKEN_IDENTIFIER){
         expect(TOKEN_IDENTIFIER);
     }
-    if(current_token->type == TOKEN_LEFT_BRACKET){
+    if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET){
         function_call_rule();
         return;
     }
@@ -596,11 +605,11 @@ void return_statement_rule(){
     }
     init_expression(expr);
 	if (token_copy->type == TOKEN_IDENTIFIER) add_element(expr, token_copy);
-    while(current_token->type != TOKEN_SEMICOLON){
-        if(current_token->type == TOKEN_EOF){
+    while(all_tokens[token_index]->type != TOKEN_SEMICOLON){
+        if(all_tokens[token_index]->type == TOKEN_EOF){
             syntax_error();
         }
-        add_element(expr, current_token);
+        add_element(expr, all_tokens[token_index]);
         next_token();
     }
 	Token *end_token = (Token *)malloc(sizeof(Token));
@@ -619,19 +628,23 @@ void return_statement_rule(){
 
 
 
-// int main(){
+int main(){
 
-//      current_token = init_token();
-//      next_token();
-//     //     printf("Token: %s, %s\n", tokenName[current_token->type], current_token->value);
-//      program_rule();
-//      if(encoutered_main){
-//         printf("yep\n");
-//      } else{
-//         syntax_error();
-//      }
+     Token *current_token = init_token();
+    while (current_token->type != TOKEN_EOF) {
+        get_token(current_token);
+        save_token(current_token);
+    }
+    token_index = 0;
+    //     printf("Token: %s, %s\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value);
+     program_rule();
+     if(encoutered_main){
+        printf("yep\n");
+     } else{
+        syntax_error();
+     }
 
-//      //free(current_token->value);
-//      free(current_token);
-//      return 0;
-//  }
+     //free(current_token->value);
+     //free(current_token);
+     return 0;
+ }

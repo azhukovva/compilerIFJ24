@@ -19,9 +19,3 @@ ifj.write("Spatne zadana posloupnost, zkuste znovu:\n"); all = ifj.concat(all, i
 } 
 }
 }
-pub fn main1() void {}
-pub fn main2() void {}
-pub fn main3() void {}
-pub fn main4() void {}
-pub fn main5() void {}
-pub fn main6() void {}
