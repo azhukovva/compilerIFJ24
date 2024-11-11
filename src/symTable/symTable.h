@@ -32,6 +32,7 @@ typedef struct bst_node {
     item_data_t data;
     struct bst_node *left;
     struct bst_node *right;
+    int height;
 } bst_node_t;
 
 typedef struct {
