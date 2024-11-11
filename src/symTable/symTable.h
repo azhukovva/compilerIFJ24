@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "../lexer/scanner.h"
+#include "../stack/stack.h"
 
 typedef enum {
     ITEM_VARIABLE,
@@ -35,18 +36,18 @@ typedef struct bst_node {
     int height;
 } bst_node_t;
 
-typedef struct {
+typedef struct fStackElement {
     bst_node_t *root;
-    struct bst_t *lower_frame;
-} bst_t;
+    struct fStackElement *nextElement;
+} *fStackElementPtr;
 
 typedef struct {
-    bst_t *current_frame;
-    bst_t *global_frame;
-} symtable_t;
+    fStackElementPtr top;
+} fStack;
+
 
 void frame_init(bst_node_t **tree);
-void symTable_init(symtable_t *table);
-void add_frame(symtable_t *table);
+void add_frame(fStack *top);
+void remove_frame
 
-#endif // SYMTABLE_H
+#endif //SYMTABLE_H
