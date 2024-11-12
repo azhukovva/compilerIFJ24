@@ -5,6 +5,7 @@
 
 typedef struct Param{
     TokenType type;
+    char *id;
     struct Param *next;
 } Param;
 
@@ -31,9 +32,13 @@ typedef struct {
 FrameStack *init_frameStack();
 void add_frame(FrameStack *frameStack);
 void add_item(FrameStack *frameStack, Node *node);
+void add_item_fn(FrameStack *frameStack, Param *param);
 Node *search(FrameStack *frameStack, const char *id);
+Node *searchTop(FrameStack *frameStack, const char *id);
 void printInOrder(Node *root);
 void printNode(Node *node);
 void printFrameStack(FrameStack *frameStack);
+void removeFrame(FrameStack *frameStack);
+
 
 #endif //SYMTABLE_H

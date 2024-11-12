@@ -20,7 +20,7 @@ char precedence_table[14][14] = {
 
 char get_precedence(TokenType stack_top, TokenType input) {
     char result = precedence_table[get_index(stack_top)][get_index(input)];
-    printf("Precedence between '%s' (stack top) and '%s' (input): %c\n", tokenName[stack_top], tokenName[input], result);
+   // printf("Precedence between '%s' (stack top) and '%s' (input): %c\n", tokenName[stack_top], tokenName[input], result);
     return result;
 }
 
@@ -188,72 +188,72 @@ void reduce(Stack *stack) {
 
     if (top_token->type == TOKEN_IDENTIFIER || top_token->type == TOKEN_INT || top_token->type == TOKEN_FLOAT) {
         // E -> i
-        printf("Reducing: E -> i\n");
+        //printf("Reducing: E -> i\n");
         pop(stack);
         push(stack, non_terminal);
         print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_PLUS && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E + E
-        printf("Reducing: E -> E + E\n");
+        //printf("Reducing: E -> E + E\n");
         stack_reduce(stack);
         print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_MINUS && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E - E
-        printf("Reducing: E -> E - E\n");
+        //printf("Reducing: E -> E - E\n");
         stack_reduce(stack);
         print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_MULTIPLY && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E * E
-        printf("Reducing: E -> E * E\n");
+       // printf("Reducing: E -> E * E\n");
         stack_reduce(stack);
         print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_DIVIDE && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E / E
-        printf("Reducing: E -> E / E\n");
+       // printf("Reducing: E -> E / E\n");
         stack_reduce(stack);
         print_stack(stack);
     } else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_LESS_THAN && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E < E
-        printf("Reducing: E -> E < E\n");
+      //  printf("Reducing: E -> E < E\n");
         stack_reduce(stack);
         print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_GREATER_THAN && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E > E
-        printf("Reducing: E -> E > E\n");
+      //  printf("Reducing: E -> E > E\n");
         stack_reduce(stack);
         print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_LESS_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E <= E
-        printf("Reducing: E -> E <= E\n");
+      //  printf("Reducing: E -> E <= E\n");
         stack_reduce(stack);
         print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_GREATER_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E >= E
-        printf("Reducing: E -> E >= E\n");
+       // printf("Reducing: E -> E >= E\n");
         stack_reduce(stack);
         print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E == E
-        printf("Reducing: E -> E == E\n");
+     //   printf("Reducing: E -> E == E\n");
         stack_reduce(stack);
         print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_NOT_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E != E
-        printf("Reducing: E -> E != E\n");
+   //     printf("Reducing: E -> E != E\n");
         stack_reduce(stack);
         print_stack(stack);
     } else if (top_token->type == TOKEN_RIGHT_BRACKET && stack->top->nextElement->data->type == TOKEN_E && stack->top->nextElement->nextElement->data->type == TOKEN_LEFT_BRACKET) {
         // E -> (E)
-        printf("Reducing: E -> (E)\n");
+     //   printf("Reducing: E -> (E)\n");
         stack_reduce(stack);
         print_stack(stack);
     } else {
@@ -263,7 +263,7 @@ void reduce(Stack *stack) {
 }
 
 void shift(Stack *stack, Token *token) {
-    printf("Shifting: %s\n", tokenName[token->type]);
+    //printf("Shifting: %s\n", tokenName[token->type]);
     push(stack, token);  // Push the item onto the stack
     print_stack(stack);
 }

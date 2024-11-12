@@ -10,6 +10,7 @@ FrameStack *init_frameStack(){
 }
 
 void add_frame(FrameStack *frameStack){
+    printf("Adding frame\n");   
     framePtr new_frame = (framePtr)malloc(sizeof(struct Frame));
     if (new_frame == NULL) {
         error_exit(ERR_INTERNAL);
@@ -130,16 +131,38 @@ Node *insertNode(Node *node, Node *new_node) {
 }
 
 void add_item(FrameStack *frameStack, Node *node) {
+    if(searchTop(frameStack, node->id) != NULL){
+        error_exit(ERR_DEFINE);
+    }
+    frameStack->top->root = insertNode(frameStack->top->root, node);
+}
+
+void add_item_fn(FrameStack *frameStack, Param *param) {
+    Node *node = (Node *)malloc(sizeof(Node));
+    if (node == NULL) {
+        error_exit(ERR_INTERNAL);
+    }
+    node->id = param->id;
+    node->type = param->type;
+    node->fn = false;
+    node->t_const = false;
+    node->params = NULL;
+    node->left = NULL;
+    node->right = NULL;
+    node->height = 1;
     frameStack->top->root = insertNode(frameStack->top->root, node);
 }
 
 // Search for a node by id in the AVL tree
 Node *searchNode(Node *root, const char *id) {
+    
     if (root == NULL) {
+        
         return NULL; // Not found
     }
-
+    
     int cmp = strcmp(id, root->id);
+    
     if (cmp == 0) {
         return root; // Found the node
     } else if (cmp < 0) {
@@ -150,10 +173,39 @@ Node *searchNode(Node *root, const char *id) {
 }
 
 Node *search(FrameStack *frameStack, const char *id) {
-    if (frameStack->top == NULL || frameStack->top->root == NULL) {
+   printf("Searching for %s\n", id);  
+    if (frameStack->top == NULL) {
+        
+        return NULL; // Empty stack or tree
+    }
+    Node *result = searchNode(frameStack->top->root, id);
+   
+    if(result == NULL){
+        framePtr current = frameStack->top->nextFrame;
+        while (current != NULL) {
+           
+            result = searchNode(current->root, id);
+            if(result != NULL){
+                return result;
+            }
+            current = current->nextFrame;
+        }
+    }
+    return result;
+}
+Node *searchTop(FrameStack *frameStack, const char *id) {
+    if (frameStack->top == NULL) {
         return NULL; // Empty stack or tree
     }
     return searchNode(frameStack->top->root, id);
+}
+
+void printParams(Param *params) {
+    Param *current = params;
+    while (current != NULL) {
+        printf("Param: TYPE:%s, ID:%s\n ", tokenName[current->type], current->id);
+        current = current->next;
+    }
 }
 
 void printNode(Node *node) {
@@ -164,6 +216,7 @@ void printNode(Node *node) {
                node->t_const ? "True" : "False",
                node->fn ? "True" : "False",
                node->height);
+        printParams(node->params);
     }
 }
 
@@ -184,4 +237,13 @@ void printFrameStack(FrameStack *frameStack) {
         printf("-----------------\n");
         current = current->nextFrame;
     }
+}
+
+void removeFrame(FrameStack *frameStack) {
+    if (frameStack->top == NULL) {
+        return;
+    }
+   // framePtr temp = frameStack->top;
+    frameStack->top = frameStack->top->nextFrame;
+   // free(temp)
 }

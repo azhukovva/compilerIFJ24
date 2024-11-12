@@ -3,6 +3,7 @@
 #include "../lexer/scanner.h"
 #include "../stack/stack.h"
 #include "../expression/expression.h"
+#include "../symTable/symTable.h"
 #include "bottomUp.h"
 
 void functions_rule();
@@ -42,6 +43,7 @@ void literal_rule();
 void expect(TokenType type);
 void expect_id(char *id);
 void expect_string(char *string);
+void block_rule_fn(Node *fn);
 
 bool is_statement_start(TokenType type);
 
