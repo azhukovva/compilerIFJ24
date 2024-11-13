@@ -8,16 +8,16 @@ pub fn main() void {
 pub fn my_func( x : i32 ) i32
 {
     var l : i32 = ifj.f2i () ;
-    const y: i32 = 11;
+    var y: []u8 = my_func2();
     const z: i32 = 10;
     var w: i32 = 10;
-   
-    return l+yz+w;
+    y = ifj.concat(y, y);
+    return l+z+w;
    
     
 }
 
-pub fn my_func2( x : i32 ) i32
+pub fn my_func2() []u8
 {
-    return 5;
+    return "5";
 }

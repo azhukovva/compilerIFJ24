@@ -470,7 +470,7 @@ void statement_rule(){
         // assigment or function call
         case TOKEN_IDENTIFIER_FUNC:
         case TOKEN_IDENTIFIER:
-            printf("assigment\n");
+            printf("assignment\n");
             assigment_rule();
             break;
         case TOKEN_IF:

@@ -67,6 +67,7 @@ int get_index(TokenType type){
         case TOKEN_INT:
         case TOKEN_FLOAT:
         case TOKEN_FLOAT_EXP:
+        case TOKEN_STRING:
         case TOKEN_NULL:
             return 12;
             break;
@@ -154,6 +155,12 @@ TokenType parse_expression(Expression *expression, FrameStack *frameStack) {
                 } else {
                     return TOKEN_F64;
                 }
+            } else if (strstr(stack.top->data->value,"u8") != NULL) {
+                if(strcmp(stack.top->data->value,"u8?") == 0){
+                    return TOKEN_U8_OPT;
+                } else {
+                    return TOKEN_U8;
+                }
             } else {
                 return TOKEN_NULL;
             }
@@ -199,6 +206,10 @@ char *assign_type_frame(Token *topToken, FrameStack *frameStack) {
             return "int?";
         case TOKEN_F64_OPT:
             return "float?";
+        case TOKEN_U8:
+            return "u8";
+        case TOKEN_U8_OPT:
+            return "u8?";
         default:
             printf("Error: Invalid type for variable '%s'.\n", topToken->value);
             error_exit(ERR_SYNTAX);
@@ -221,6 +232,8 @@ char *assign_type(Token *topToken) {
             return "null";
         case TOKEN_E:
             return topToken->value;
+        case TOKEN_STRING:
+            return "u8Const";
         default:
             printf("Error: Invalid type for token.\n");
             error_exit(ERR_SYNTAX);
@@ -339,7 +352,9 @@ void reduce(Stack *stack, FrameStack *frameStack) {
         return;
     }
 
-    if (top_token->type == TOKEN_IDENTIFIER || top_token->type == TOKEN_INT || top_token->type == TOKEN_FLOAT || top_token->type == TOKEN_NULL || top_token->type == TOKEN_FLOAT_EXP) {
+    if (top_token->type == TOKEN_IDENTIFIER || top_token->type == TOKEN_INT ||
+     top_token->type == TOKEN_FLOAT || top_token->type == TOKEN_NULL ||
+      top_token->type == TOKEN_FLOAT_EXP || top_token->type == TOKEN_STRING) {
         // E -> i
         printf("Reducing: E -> i\n");
         if (top_token->type == TOKEN_IDENTIFIER) {
