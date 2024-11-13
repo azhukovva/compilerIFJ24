@@ -132,7 +132,7 @@ Node *insertNode(Node *node, Node *new_node) {
 
 void add_item(FrameStack *frameStack, Node *node) {
     if(searchTop(frameStack, node->id) != NULL){
-        error_exit(ERR_DEFINE);
+        error_exit(ERR_UNDEF_VAR);
     }
     frameStack->top->root = insertNode(frameStack->top->root, node);
 }

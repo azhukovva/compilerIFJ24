@@ -2,21 +2,23 @@
 const ifj = @import("ifj24.zig");
 // Hlavni funkce
 pub fn main() void {
-    var x: i32 = 1;
-    const y: i32 = 11;
+    
+    
+}
+pub fn my_func( x : i32 ) i32
+{
+    var l : i32 = my_func(5) ;
+    const y: f64 = 11.0;
     const z: f64 = 10.0;
     var w: f64 = 10.0;
-    if (w == 10)       {} else {}
-    if (w + 2.3 >= 10)       {} else {}
-    if (11 <= 10)   {} else {}
-    if (x < 10)    {} else {}
-    if (x + 1 > y) {} else {}
-    if (x + y > 9) {} else {}
-    if (2 * (19 - 10) + y <= 36 - x) {} else {}
-    if (10 <= 10.0)    {} else {}
-    if (10 >= w)       {} else {}
-    if (10 >= z * 2.3) {} else {}
-    if (y <= 11.0)     {} else {}
-    if (y > w + 2.9)  {} else {}
-    if (9.0 < x) {} else {}
+    x = my_func2(5);
+    if(1) {
+        return my_func2(5);
+    }
+    
+}
+
+pub fn my_func2( x : i32 ) i32
+{
+    return 5;
 }

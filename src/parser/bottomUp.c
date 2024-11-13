@@ -143,14 +143,24 @@ TokenType parse_expression(Expression *expression, FrameStack *frameStack) {
             //free_stack(&stack);  // Free the stack before exiting
             printf("Expression datatype: %s\n", stack.top->data->value);
             if (strstr(stack.top->data->value,"int") != NULL) {
-                return TOKEN_I32;
+                if(strcmp(stack.top->data->value,"int?") == 0){
+                    return TOKEN_I32_OPT;
+                } else {
+                    return TOKEN_I32;
+                }
             } else if (strstr(stack.top->data->value,"float") != NULL) {
-                return TOKEN_F64;
+                if(strcmp(stack.top->data->value,"float?") == 0){
+                    return TOKEN_F64_OPT;
+                } else {
+                    return TOKEN_F64;
+                }
             } else {
                 return TOKEN_NULL;
             }
         }
     }
+    // TODO: $[]u8$ :)
+    // if (stack == "$[]u8$") { :) }
     return result;
     //free_stack(&stack);  // Free memory used by the stack
 }
@@ -228,14 +238,29 @@ char* arithmetic(Stack *stack) {
        strcmp(left->value, "null") == 0) error_exit(ERR_EXPR_TYPE);
     if(right->value != left->value){
         if (strstr(left->value, right->value) != NULL) {
-            result = "int";
+            if(strstr(left->value, "float") != NULL){
+                result = "float";
+            } else {
+                result = "int";
+            }
         } else if (strstr(right->value, left->value) != NULL){
-            result = "int";
+            if(strstr(right->value, "float") != NULL){
+                result = "float";
+            } else {
+                result = "int";
+            }
         } else {
+            printf("mama sdohla tri\n");
             result = "float";
         }
         if (strstr(right->value, "Const") != NULL && strstr(left->value, "Const") != NULL) {
-            result = strcat(result, "Const");
+            char *temp_result = (char *)malloc(strlen(result) + strlen("Const") + 1);
+            if (temp_result == NULL) {
+                error_exit(ERR_INTERNAL);
+            }
+            strcpy(temp_result, result);
+            strcat(temp_result, "Const");
+            result = temp_result;
         }
         return result;
     } else {
