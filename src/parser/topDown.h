@@ -46,6 +46,7 @@ void expect_string(char *string);
 void block_rule_fn(Node *fn);
 
 TokenType type_compatibility(TokenType variable, TokenType expr_type);
+TokenType get_token_type(const char *type_str);
 bool is_statement_start(TokenType type);
 
 #endif //TOPDOWN_H

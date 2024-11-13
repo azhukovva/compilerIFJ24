@@ -15,6 +15,7 @@ typedef struct Node{
     TokenType type;
     bool fn;
     bool t_const;
+    bool used;
     Param *params;
 	struct Node *left;
 	struct Node *right;
@@ -40,6 +41,7 @@ void printInOrder(Node *root);
 void printNode(Node *node);
 void printFrameStack(FrameStack *frameStack);
 void removeFrame(FrameStack *frameStack);
-
+void set_usage(FrameStack *frameStack, const char *id);
+void check_used_flag(Node *root);
 
 #endif //SYMTABLE_H

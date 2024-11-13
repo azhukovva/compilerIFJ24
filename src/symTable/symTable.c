@@ -146,6 +146,7 @@ void add_item_fn(FrameStack *frameStack, Param *param) {
     node->type = param->type;
     node->fn = false;
     node->t_const = false;
+    node->used = true;
     node->params = NULL;
     node->left = NULL;
     node->right = NULL;
@@ -175,7 +176,6 @@ Node *searchNode(Node *root, const char *id) {
 Node *search(FrameStack *frameStack, const char *id) {
    printf("Searching for %s\n", id);  
     if (frameStack->top == NULL) {
-        
         return NULL; // Empty stack or tree
     }
     Node *result = searchNode(frameStack->top->root, id);
@@ -210,11 +210,12 @@ void printParams(Param *params) {
 
 void printNode(Node *node) {
     if (node != NULL) {
-        printf("ID: %s, Type: %s, Const: %s, Function: %s Height: %d\n",
+        printf("ID: %s, Type: %s, Const: %s, Function: %s, Used: %s, Height: %d\n",
                node->id,
                tokenName[node->type],
                node->t_const ? "True" : "False",
                node->fn ? "True" : "False",
+               node->used ? "True" : "False",
                node->height);
         printParams(node->params);
     }
@@ -244,6 +245,21 @@ void removeFrame(FrameStack *frameStack) {
         return;
     }
    // framePtr temp = frameStack->top;
+   check_used_flag(frameStack->top->root);
     frameStack->top = frameStack->top->nextFrame;
    // free(temp)
+}
+void set_usage(FrameStack *frameStack, const char *id){
+    Node *node = search(frameStack, id);
+    if(node == NULL){
+        error_exit(ERR_UNDEF_VAR);
+    }
+    node->used = true;
+}
+void check_used_flag(Node *root) {
+    if (root != NULL) {
+        check_used_flag(root->left);
+        if (!(root->used)) error_exit(ERR_VAR_OUT_OF_SCOPE);
+        check_used_flag(root->right);
+    }
 }

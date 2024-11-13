@@ -7,14 +7,13 @@ pub fn main() void {
 }
 pub fn my_func( x : i32 ) i32
 {
-    var l : i32 = my_func(5) ;
-    const y: f64 = 11.0;
-    const z: f64 = 10.0;
-    var w: f64 = 10.0;
-    x = my_func2(5);
-    if(1) {
-        return my_func2(5);
-    }
+    var l : i32 = ifj.f2i () ;
+    const y: i32 = 11;
+    const z: i32 = 10;
+    var w: i32 = 10;
+   
+    return l+yz+w;
+   
     
 }
 
