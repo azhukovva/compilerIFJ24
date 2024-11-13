@@ -43,12 +43,12 @@ void free_stack(Stack *stack) {
 
 void print_stack(Stack *stack) {
     StackElementPtr current = stack->top;
-    //printf("---STACK---\n");
+    printf("---STACK---\n");
     while (current != NULL) {
-        //printf("type: %s val: %s\n", tokenName[current->data->type], current->data->value);
+        printf("type: %s val: %s\n", tokenName[current->data->type], current->data->value);
         current = current->nextElement;
     }
-    //printf("-----------\n");
+    printf("-----------\n");
 }
 
 bool stackIsEmpty(Stack *stack) {

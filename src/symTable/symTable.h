@@ -11,6 +11,7 @@ typedef struct Param{
 
 typedef struct Node{
     char *id;
+    char *value;
     TokenType type;
     bool fn;
     bool t_const;

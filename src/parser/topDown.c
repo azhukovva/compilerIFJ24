@@ -357,6 +357,7 @@ void var_rule(){
     if(all_tokens[token_index]->type == TOKEN_CONST){
         expect(TOKEN_CONST);
         variable->t_const = true;
+        variable->value = all_tokens[token_index+2]->value;
     } else if(all_tokens[token_index]->type == TOKEN_VAR){
         expect(TOKEN_VAR);
         variable->t_const = false;
@@ -421,7 +422,7 @@ void var_rule(){
 	add_element(expr, end_token);
 // //TODO free endtoken
     print_expression(expr);
-    parse_expression(expr);
+    parse_expression(expr, frameStack);
     add_item(frameStack, variable);
     expect(TOKEN_SEMICOLON);
     // free(token_copy);
@@ -502,7 +503,7 @@ void assigment_rule(){
 	add_element(expr, end_token);
 // //TODO free endtoken
     print_expression(expr);
-    parse_expression(expr);
+    TokenType expression = parse_expression(expr, frameStack);
     expect(TOKEN_SEMICOLON);
     // free(token_copy);
     //free_expression(expr);
@@ -620,7 +621,7 @@ void conditionals_rule(){
 	end_token->value = "$";
 	add_element(expr, end_token);
     print_expression(expr);
-    parse_expression(expr);
+    parse_expression(expr, frameStack);
 // //TODO free endtoken
     //expect(TOKEN_RIGHT_BRACKET);
     optional_null_rule();
@@ -710,7 +711,7 @@ void while_statement_rule(){
 	end_token->value = "$";
 	add_element(expr, end_token);
     print_expression(expr);
-    parse_expression(expr);
+    parse_expression(expr, frameStack);
     //expect(TOKEN_RIGHT_BRACKET);
     optional_null_rule();
     block_rule();
@@ -772,7 +773,7 @@ void return_statement_rule(){
 	add_element(expr, end_token);
 // //TODO free endtoken
     print_expression(expr);
-    parse_expression(expr);
+    parse_expression(expr, frameStack);
 
     expect(TOKEN_SEMICOLON);
 }
