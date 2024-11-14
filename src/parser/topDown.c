@@ -536,6 +536,9 @@ void var_rule(){
     }
 
     expect(TOKEN_ASSIGN);
+    if(all_tokens[token_index]->type == TOKEN_STRING){
+        error_exit(ERR_EXPR_DERIV);
+    }
         //inbuilt function call
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
         printf("here\n");
@@ -618,6 +621,9 @@ void assigment_rule(){
         return;
     }
     expect(TOKEN_ASSIGN);
+    if(all_tokens[token_index]->type == TOKEN_STRING){
+        error_exit(ERR_EXPR_TYPE);
+    }
     if(variable->t_const){
         error_exit(ERR_UNDEF_VAR);
     }
