@@ -10,6 +10,7 @@ PARSER_DIR = src/parser
 STACK_DIR = src/stack
 SYMBOL_TABLE_DIR = src/symTable
 EXPRESSION_DIR = src/expression
+GENERATOR_DIR = src/generator
 
 OBJ_DIR = obj
 
@@ -23,6 +24,7 @@ SRCS = $(LEXER_DIR)/scanner.c \
        $(STACK_DIR)/stack.c \
        $(SYMBOL_TABLE_DIR)/fillSymTable.c \
        $(SYMBOL_TABLE_DIR)/symTable.c \
+       $(GENERATOR_DIR)/generator.c \
        $(EXPRESSION_DIR)/expression.c
 
 
