@@ -83,3 +83,32 @@ char *_strcat(const char *str1, const char *str2) {
 
     return result;
 }
+char *itoa(int n) {
+    char *s = (char *)malloc(12);
+    int i, sign;
+    if ((sign = n) < 0)  
+        n = -n;         
+    i = 0;
+    do {       
+        s[i++] = n % 10 + '0';   
+    } while ((n /= 10) > 0);     
+    if (sign < 0)
+        s[i++] = '-';
+    s[i] = '\0';
+    reverse(s);
+    return s;
+}
+void reverse(char *str) {
+    int length = strlen(str);
+    int start = 0;
+    int end = length - 1;
+    char temp;
+
+    while (start < end) {
+        temp = str[start];
+        str[start] = str[end];
+        str[end] = temp;
+        start++;
+        end--;
+    }
+}

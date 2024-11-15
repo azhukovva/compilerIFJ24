@@ -38,7 +38,7 @@ char *errorText(int error)
     case ERR_EXPR_DERIV:
         return "Type derivation error";
     case ERR_VAR_OUT_OF_SCOPE:
-        return "Variable out of scope";
+        return "Variable out of scope; unused variable";
     case ERR_SEM_OTHER:
         return "Other semantic error";
     case ERR_INTERNAL:

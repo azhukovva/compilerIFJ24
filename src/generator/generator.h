@@ -28,4 +28,6 @@ void build_instruction(InstructionList *il, char *opcode, char *arg1, char *arg2
 void print_instruction(Instruction *instruction);
 void print_instruction_list(InstructionList *il);
 char *_strcat(const char *s1, const char *s2);
+char *itoa(int n);
+void reverse(char *str);
 #endif //GENERATOR_H

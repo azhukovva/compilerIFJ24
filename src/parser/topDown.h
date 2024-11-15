@@ -5,6 +5,8 @@
 #include "../expression/expression.h"
 #include "../symTable/symTable.h"
 #include "bottomUp.h"
+#include "../generator/generator.h"
+#include <stdlib.h>
 
 void functions_rule();
 void main_func_rule();
