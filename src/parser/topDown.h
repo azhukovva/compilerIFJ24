@@ -45,8 +45,12 @@ void expect_id(char *id);
 void expect_string(char *string);
 void block_rule_fn(Node *fn);
 
-TokenType type_compatibility(TokenType variable, TokenType expr_type);
+void parse_args(Node *signature, int index);
+TokenType convert_from_lit(TokenType type);
+bool is_lit(TokenType type);
+TokenType type_compatibility(TokenType variable, TokenType expr_type, bool from_args);
 TokenType get_token_type(const char *type_str);
 bool is_statement_start(TokenType type);
+void parse_args(Node *signature, int index);
 
 #endif //TOPDOWN_H

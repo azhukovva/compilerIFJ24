@@ -43,5 +43,6 @@ void printFrameStack(FrameStack *frameStack);
 void removeFrame(FrameStack *frameStack);
 void set_usage(FrameStack *frameStack, const char *id);
 void check_used_flag(Node *root);
+void printNode(Node *node);
 
 #endif //SYMTABLE_H

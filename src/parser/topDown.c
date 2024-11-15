@@ -34,7 +34,7 @@ void save_token(Token *current_token){
     token_index++;
 }
 
-TokenType type_compatibility(TokenType variable, TokenType expr_type){
+TokenType type_compatibility(TokenType variable, TokenType expr_type, bool from_args){
     printf("TYPE COMPAT: %s %s\n", tokenName[variable], tokenName[expr_type]);
     if(expr_type == TOKEN_NULL && variable == TOKEN_EMPTY){
         error_exit(ERR_EXPR_DERIV);
@@ -49,8 +49,11 @@ TokenType type_compatibility(TokenType variable, TokenType expr_type){
             }
             if(variable == TOKEN_U8_OPT && (expr_type == TOKEN_U8 || expr_type == TOKEN_NULL)){
                 return TOKEN_U8_OPT;
+            } else if(from_args){
+                error_exit(ERR_WRONG_PARAM_RET);
+            } else{
+                error_exit(ERR_EXPR_TYPE);
             }
-            error_exit(ERR_EXPR_TYPE);
         }
     } else {
         return expr_type;
@@ -77,7 +80,8 @@ void add_builtin_functions(FrameStack *frameStack) {
         {"ifj.substring", "?[]u8", "[]u8,i32,i32"},
         {"ifj.strcmp", "i32", "[]u8,[]u8"},
         {"ifj.ord", "i32", "[]u8,i32"},
-        {"ifj.chr", "[]u8", "i32"}
+        {"ifj.chr", "[]u8", "i32"},
+        {"ifj.string", "[]u8", "[]u8"}
     };
 
     for (int i = 0; i < (int)sizeof(builtin_functions) / (int)sizeof(builtin_functions[0]); i++) {
@@ -239,7 +243,7 @@ void expect(TokenType type){
     //printf("Checking: type: %s val: %s\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value);
     //if we get a comment we skip it and get the next token
     skip_comments();
-    //--printf("Checking: type: %s val: %s\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value);
+    printf("Checking: type: %s val: %s\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value);
     if(all_tokens[token_index]->type == type){
         next_token();
     } else {
@@ -414,21 +418,33 @@ void return_type_rule(){
 void block_rule_fn(Node *fn){
     expect(TOKEN_LEFT_BRACE);
     add_frame(frameStack);
+
     Node *return_node = (Node *)malloc(sizeof(Node));
+    if (return_node == NULL) {
+        error_exit(ERR_INTERNAL);
+    }
     return_node->id = "$return$";
     return_node->type = fn->type;
     return_node->used = true;
     return_node->height = 1;
+    return_node->params = NULL;
+    return_node->left = NULL;
+    return_node->right = NULL;
     add_item(frameStack, return_node);
-    while(fn->params != NULL){
-        add_item_fn(frameStack, fn->params);
-        fn->params = fn->params->next;
+
+    // Use a temporary pointer to traverse the parameters
+    Param *temp_param = fn->params;
+    while (temp_param != NULL) {
+        add_item_fn(frameStack, temp_param);
+        temp_param = temp_param->next;
     }
+
     printf("entering statements\n");
     statements_rule();
     expect(TOKEN_RIGHT_BRACE);
     printFrameStack(frameStack);
     removeFrame(frameStack);
+
 }
 
 void block_rule(){
@@ -520,6 +536,9 @@ void var_rule(){
     }
 
     expect(TOKEN_ASSIGN);
+    if(all_tokens[token_index]->type == TOKEN_STRING){
+        error_exit(ERR_EXPR_DERIV);
+    }
         //inbuilt function call
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
         printf("here\n");
@@ -527,7 +546,7 @@ void var_rule(){
             error_exit(ERR_DEFINE);
         }
         expect(TOKEN_IDENTIFIER_FUNC);
-        variable->type = type_compatibility(variable->type, search(frameStack, all_tokens[token_index-1]->value)->type);
+        variable->type = type_compatibility(variable->type, search(frameStack, all_tokens[token_index-1]->value)->type, false);
         add_item(frameStack, variable);
         function_call_rule();
         return;
@@ -543,7 +562,7 @@ void var_rule(){
         expect(TOKEN_IDENTIFIER);
     }
     if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET){
-        variable->type = type_compatibility(variable->type, search(frameStack, all_tokens[token_index-1]->value)->type);
+        variable->type = type_compatibility(variable->type, search(frameStack, all_tokens[token_index-1]->value)->type, false);
         add_item(frameStack, variable);
         function_call_rule();
         return;
@@ -572,7 +591,7 @@ void var_rule(){
 
     print_expression(expr);
     TokenType expr_type = parse_expression(expr, frameStack);
-    variable->type = type_compatibility(variable->type, expr_type);
+    variable->type = type_compatibility(variable->type, expr_type, false);
     printf("Variable ID: %s --- Variable type: %s\n", variable->id,tokenName[variable->type]);
     add_item(frameStack, variable);
     expect(TOKEN_SEMICOLON);
@@ -602,6 +621,9 @@ void assigment_rule(){
         return;
     }
     expect(TOKEN_ASSIGN);
+    if(all_tokens[token_index]->type == TOKEN_STRING){
+        error_exit(ERR_EXPR_TYPE);
+    }
     if(variable->t_const){
         error_exit(ERR_UNDEF_VAR);
     }
@@ -615,7 +637,7 @@ void assigment_rule(){
         }
         expect(TOKEN_IDENTIFIER_FUNC);
         TokenType expr_type = search(frameStack, all_tokens[token_index-1]->value)->type;
-        type_compatibility(variable->type, expr_type);
+        type_compatibility(variable->type, expr_type, false);
         set_usage(frameStack, variable->id);
         function_call_rule();
         return;
@@ -640,7 +662,7 @@ void assigment_rule(){
     }
     if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET){
         TokenType expr_type = search(frameStack, all_tokens[token_index-1]->value)->type;
-        type_compatibility(variable->type, expr_type);
+        type_compatibility(variable->type, expr_type, false);
         set_usage(frameStack, variable->id);
         function_call_rule();
         return;
@@ -671,7 +693,7 @@ void assigment_rule(){
 // //TODO free endtoken
     print_expression(expr);
     TokenType expr_type = parse_expression(expr, frameStack);
-    type_compatibility(variable->type, expr_type);
+    type_compatibility(variable->type, expr_type, false);
     expect(TOKEN_SEMICOLON);
     set_usage(frameStack, variable->id);
     // free(token_copy);
@@ -699,11 +721,129 @@ void function_call_rule(){
         expect(TOKEN_IDENTIFIER);
     }
     expect(TOKEN_LEFT_BRACKET);
+    printNode(signature);
+    parse_args(signature, token_index);
     arguments_rule();
     expect(TOKEN_RIGHT_BRACKET);
     expect(TOKEN_SEMICOLON);
     printf("function call end\n");
     skip_comments();
+}
+
+bool is_lit(TokenType type){
+    return type == TOKEN_INT || type == TOKEN_FLOAT || type == TOKEN_STRING || type == TOKEN_NULL;
+}
+TokenType convert_from_lit(TokenType type){
+    switch(type){
+        case TOKEN_INT:
+            return TOKEN_I32;
+        case TOKEN_FLOAT:
+            return TOKEN_F64;
+        case TOKEN_STRING:
+            return TOKEN_U8;
+        default:
+            return TOKEN_EMPTY;
+    }
+}
+bool is_optional_type(TokenType type){
+    printf("TYPE: %s\n", tokenName[type]);
+    return type == TOKEN_I32_OPT || type == TOKEN_F64_OPT || type == TOKEN_U8_OPT;
+}
+
+void check_param_lists(Param *param, Param *args){
+    while (param != NULL || args != NULL) {
+        if (param == NULL || args == NULL) {
+            printf("lol\n");
+            error_exit(ERR_WRONG_PARAM_RET); // One list is longer than the other
+        }
+        if(param->type == TOKEN_IDENTIFIER){
+            param = param->next;
+            args = args->next;
+            continue;
+        }
+        if( is_optional_type(param->type) && args->type == TOKEN_NULL){
+            param = param->next;
+            args = args->next;
+            continue;
+        }
+        if (!type_compatibility(param->type, args->type, true)) {
+            printf("lol\n");
+            error_exit(ERR_WRONG_PARAM_RET); // Types do not match
+        }
+        param = param->next;
+        args = args->next;
+    }
+}
+
+void print_param_list(const char *label, Param *head) {
+    printf("%s: ", label);
+    Param *current = head;
+    while (current != NULL) {
+        printf("%d ", current->type);
+        current = current->next;
+    }
+    printf("\n");
+}
+
+void parse_args(Node *signature, int index){
+    Param *param = signature->params;
+    Param *args = NULL;
+    while(all_tokens[index]->type != TOKEN_RIGHT_BRACKET){
+        printf("ya ebal\n");
+        if(all_tokens[index]->type == TOKEN_EOF){
+            printf("ya ebal\n");
+            syntax_error();
+        }
+        if(all_tokens[index]->type == TOKEN_IDENTIFIER){
+            Node *to_check = search(frameStack, all_tokens[index]->value);
+            if(to_check == NULL){
+                error_exit(ERR_UNDEF_VAR);
+            }
+            Param *new_param = (Param *)malloc(sizeof(Param));
+            if(new_param == NULL){
+                error_exit(ERR_INTERNAL);
+            }
+            new_param->type = to_check->type;
+            new_param->id = to_check->id;
+            new_param->next = NULL;
+            if(args == NULL){
+                args = new_param;
+            } else {
+                Param *tmp = args;
+                while(tmp->next != NULL){
+                    tmp = tmp->next;
+                }
+                tmp->next = new_param;
+            }
+            set_usage(frameStack, all_tokens[index]->value);
+        }  
+        if(is_lit(all_tokens[index]->type)){
+            Param *new_param = (Param *)malloc(sizeof(Param));
+            if(new_param == NULL){
+                error_exit(ERR_INTERNAL);
+            }
+            if(all_tokens[index]->type == TOKEN_NULL){
+                new_param->type = TOKEN_NULL;
+            } else {
+                new_param->type = convert_from_lit(all_tokens[index]->type);
+            }
+            new_param->id = all_tokens[index]->value;
+            new_param->next = NULL;
+            if(args == NULL){
+                args = new_param;
+            } else {
+                Param *tmp = args;
+                while(tmp->next != NULL){
+                    tmp = tmp->next;
+                }
+                tmp->next = new_param;
+            }
+        }
+        index++;
+    }
+    print_param_list("Signature", signature->params);
+    print_param_list("Arguments", args);
+    check_param_lists(param, args);
 }
 
 //<Arguments> ::= <Argument> <Arguments_tail>
@@ -746,6 +886,9 @@ void literal_rule(){
         break;
     case TOKEN_STRING:
         expect(TOKEN_STRING);
+        break;
+    case TOKEN_NULL:
+        expect(TOKEN_NULL);
         break;
     default:
         syntax_error();
@@ -927,7 +1070,7 @@ void return_statement_rule(){
         }
         expect(TOKEN_IDENTIFIER_FUNC);
         TokenType ret_type = search(frameStack, all_tokens[token_index-1]->value)->type;
-        type_compatibility(return_node->type, ret_type);
+        type_compatibility(return_node->type, ret_type,false);
         function_call_rule();
         return;
     }
@@ -946,7 +1089,7 @@ void return_statement_rule(){
     }
     if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET){
         TokenType expr_type = search(frameStack, all_tokens[token_index-1]->value)->type;
-        type_compatibility(return_node->type, expr_type);
+        type_compatibility(return_node->type, expr_type,false);
         function_call_rule();
         return;
     }
@@ -979,7 +1122,7 @@ void return_statement_rule(){
 // //TODO free endtoken
     print_expression(expr);
     TokenType expr_type = parse_expression(expr, frameStack);
-    type_compatibility(return_node->type, expr_type);
+    type_compatibility(return_node->type, expr_type,false);
 
     expect(TOKEN_SEMICOLON);
 }
