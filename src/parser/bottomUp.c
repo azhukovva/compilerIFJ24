@@ -1,5 +1,6 @@
 #include "bottomUp.h"
 
+extern InstructionList *instructionList;
 char precedence_table[14][14] = {
     // (   )    +    -    *    /   ==   !=    <    >   <=    >=   i    $
     {'<', '=', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', ' '}, // (

@@ -574,10 +574,11 @@ void var_rule(){
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER){
         expect(TOKEN_IDENTIFIER);
     }
-    if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET){
+    if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET && all_tokens[token_index-1]->type == TOKEN_IDENTIFIER){
         variable->type = type_compatibility(variable->type, search(frameStack, all_tokens[token_index-1]->value)->type, false);
         add_item(frameStack, variable);
         function_call_rule();
+        build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "TF@return_value", NULL);
         return;
     }
     Expression *expr = (Expression *)malloc(sizeof(Expression));
@@ -673,11 +674,12 @@ void assigment_rule(){
         set_usage(frameStack, all_tokens[token_index]->value);
         expect(TOKEN_IDENTIFIER);
     }
-    if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET){
+    if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET && all_tokens[token_index-1]->type == TOKEN_IDENTIFIER){
         TokenType expr_type = search(frameStack, all_tokens[token_index-1]->value)->type;
         type_compatibility(variable->type, expr_type, false);
         set_usage(frameStack, variable->id);
         function_call_rule();
+        build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "TF@return_value", NULL);
         return;
     }
     Expression *expr = (Expression *)malloc(sizeof(Expression));
@@ -809,16 +811,24 @@ void print_param_list(const char *label, Param *head) {
     }
     printf("\n");
 }
-char *what_lit(TokenType type){
-    switch(type){
+void build_arg_lit(int i){
+    switch(all_tokens[token_index]->type){
         case TOKEN_INT:
-            return "int@";
+            build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("int@", all_tokens[token_index]->value), NULL);
+            return;
         case TOKEN_FLOAT:
-            return "float@";
+            float tmp = atof(all_tokens[token_index]->value);
+            char tmp_str[100];
+            sprintf(tmp_str, "%a", tmp);
+            build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("float@", tmp_str), NULL);
+            return;
         case TOKEN_STRING:
-            return "string@";
+            return;
+        case TOKEN_NULL:
+            build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), "nil@nil", NULL);;
+            return;
         default:
-            return "";
+            return;
     }
 }
 
@@ -858,7 +868,7 @@ void parse_args(Node *signature, int index){
             set_usage(frameStack, all_tokens[index]->value);
         }  
         if(is_lit(all_tokens[index]->type)){
-            build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat(what_lit(all_tokens[token_index]->type), all_tokens[token_index]->value), NULL);
+            build_arg_lit(i);
             Param *new_param = (Param *)malloc(sizeof(Param));
             if(new_param == NULL){
                 error_exit(ERR_INTERNAL);
@@ -1098,6 +1108,7 @@ void return_statement_rule(){
     Node *return_node = search(frameStack, "$return$");
     if(all_tokens[token_index]->type == TOKEN_SEMICOLON){
         expect(TOKEN_SEMICOLON);
+        build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
         build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
         return;
     }
@@ -1114,7 +1125,6 @@ void return_statement_rule(){
         TokenType ret_type = search(frameStack, all_tokens[token_index-1]->value)->type;
         type_compatibility(return_node->type, ret_type,false);
         function_call_rule();
-        build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
         return;
     }
 
@@ -1130,10 +1140,14 @@ void return_statement_rule(){
         set_usage(frameStack, all_tokens[token_index]->value);
         expect(TOKEN_IDENTIFIER);
     }
-    if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET){
+    if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET && all_tokens[token_index-1]->type == TOKEN_IDENTIFIER){
+        printf("here\n");
         TokenType expr_type = search(frameStack, all_tokens[token_index-1]->value)->type;
+        printf("there\n");
         type_compatibility(return_node->type, expr_type,false);
         function_call_rule();
+        build_instruction(instructionList, "MOVE", "LF@return_value", "TF@return_value", NULL);
+        build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
         build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
         return;
     }
@@ -1164,11 +1178,14 @@ void return_statement_rule(){
 	end_token->value = "$";
 	add_element(expr, end_token);
 // //TODO free endtoken
+    build_instruction(instructionList, "DEFVAR", "LF@supa_giga_expr_res", NULL, NULL);
     print_expression(expr);
     TokenType expr_type = parse_expression(expr, frameStack);
     type_compatibility(return_node->type, expr_type,false);
 
     expect(TOKEN_SEMICOLON);
+    build_instruction(instructionList, "MOVE", "LF@return_value", "LF@supa_giga_expr_res", NULL);
+    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
     build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
 }
 

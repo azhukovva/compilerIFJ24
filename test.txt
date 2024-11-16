@@ -2,12 +2,15 @@
 const ifj = @import("ifj24.zig");
 // Hlavni funkce
 pub fn main() void {
-    var l : i32 = my_func2(5) ;
-    l = 7;
+    var l : i32 = my_func2(null) ;
+    l = my_func2(7.6);
     return;
 }
 
-pub fn my_func2( x : i32 ) i32
+pub fn my_func2( x : ?f64 ) i32
 {
-    return 5;
+    return func(5);
+}
+pub fn func(x : i32) i32{
+    return (7+x)*(x+7);
 }
