@@ -812,13 +812,14 @@ void print_param_list(const char *label, Param *head) {
     printf("\n");
 }
 void build_arg_lit(int i){
+	float tmp;
+    char *tmp_str = NULL;
     switch(all_tokens[token_index]->type){
         case TOKEN_INT:
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("int@", all_tokens[token_index]->value), NULL);
             return;
         case TOKEN_FLOAT:
-            float tmp = atof(all_tokens[token_index]->value);
-            char tmp_str[100];
+            tmp = atof(all_tokens[token_index]->value);
             sprintf(tmp_str, "%a", tmp);
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("float@", tmp_str), NULL);
             return;
