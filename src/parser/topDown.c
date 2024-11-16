@@ -225,6 +225,63 @@ void fill_sym_table_fn(FrameStack *frameStack, int token_index) {
         token_index++;
     }
 }
+char* build_builtin_lit_arg(TokenType param_type, char *param_id){
+    switch(param_type){
+        case TOKEN_INT:
+            return _strcat("int@", param_id);
+        case TOKEN_FLOAT:
+            float tmp = atof(param_id);
+            char tmp_str[100];
+            sprintf(tmp_str, "%a", tmp);
+            return _strcat("float@", tmp_str);
+        case TOKEN_IDENTIFIER:
+            return _strcat("LF@", param_id);
+        default:
+            return "";
+    }
+}
+
+void build_builtin(char *id, int curr_token, char *var_id){
+    Param *params = NULL;
+    while(all_tokens[curr_token]->type != TOKEN_RIGHT_BRACKET){
+      if(all_tokens[curr_token]->type == TOKEN_IDENTIFIER || is_lit(all_tokens[curr_token]->type)){
+          Param *new_param = (Param *)malloc(sizeof(Param));
+        if (new_param == NULL) {
+            error_exit(ERR_INTERNAL);
+        }
+        new_param->id = (char *)malloc(strlen(all_tokens[curr_token]->value) + 1);
+        if (new_param->id == NULL) {
+            error_exit(ERR_INTERNAL);
+        }
+        strcpy(new_param->id, all_tokens[curr_token]->value);
+        new_param->type = all_tokens[curr_token]->type;
+        new_param->next = NULL;
+        if(params == NULL){
+            params = new_param;
+        } else {
+            Param *temp = params;
+            while(temp->next != NULL){
+                temp = temp->next;
+            }
+            temp->next = new_param;
+        }
+      }
+      curr_token += 1;
+    }
+    printf("mama sdohla\n");
+    //TokenType var_type = search(frameStack, var_id)->type;
+    printf("ya ebanat: %s\n", tokenName[params->type]);
+    if(strcmp(id, "ifj.i2f") == 0){
+        if(is_lit(params->type)){
+            build_instruction(instructionList, "INT2FLOAT", _strcat("LF@", var_id), build_builtin_lit_arg(params->type, params->id), NULL);
+        } else{
+            build_instruction(instructionList, "INT2FLOAT", _strcat("LF@", var_id), _strcat("LF@", params->id), NULL);
+        }
+    } else if(strcmp(id, "ifj.f2i") == 0){
+        build_instruction(instructionList, "FLOAT2INT", _strcat("LF@", var_id), _strcat("LF@", params->id), NULL);
+    }
+    print_param_list( "queres ?",params);
+}
 
 
 //Error handling 
@@ -314,6 +371,7 @@ void function_rule(){
     expect(TOKEN_FN);
     Node *fn = search(frameStack, all_tokens[token_index]->value);
     build_instruction(instructionList, "LABEL", all_tokens[token_index]->value, NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@supa_giga_expr_res", NULL, NULL);
     Param *temp_param = fn->params;
     int i = 0;
     while (temp_param != NULL) {
@@ -483,7 +541,7 @@ void statements_rule(){
 bool is_statement_start(TokenType type){
     skip_comments();
     return type == TOKEN_CONST || type == TOKEN_VAR || type == TOKEN_IDENTIFIER ||
-           type == TOKEN_IF || type == TOKEN_WHILE || type == TOKEN_RETURN || type == TOKEN_IDENTIFIER_FUNC;
+           type == TOKEN_IF || type == TOKEN_WHILE || type == TOKEN_RETURN || type == TOKEN_IDENTIFIER_FUNC || type == TOKEN_UNDERLINE;
 }
 
 void statement_rule(){
@@ -497,6 +555,7 @@ void statement_rule(){
         // assigment or function call
         case TOKEN_IDENTIFIER_FUNC:
         case TOKEN_IDENTIFIER:
+        case TOKEN_UNDERLINE:
             printf("assignment\n");
             assigment_rule();
             break;
@@ -561,7 +620,7 @@ void var_rule(){
         expect(TOKEN_IDENTIFIER_FUNC);
         variable->type = type_compatibility(variable->type, search(frameStack, all_tokens[token_index-1]->value)->type, false);
         add_item(frameStack, variable);
-        function_call_rule();
+        function_call_rule(variable->id);
         return;
     }
     //expression_rule();
@@ -577,7 +636,7 @@ void var_rule(){
     if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET && all_tokens[token_index-1]->type == TOKEN_IDENTIFIER){
         variable->type = type_compatibility(variable->type, search(frameStack, all_tokens[token_index-1]->value)->type, false);
         add_item(frameStack, variable);
-        function_call_rule();
+        function_call_rule(variable->id);
         build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "TF@return_value", NULL);
         return;
     }
@@ -592,6 +651,9 @@ void var_rule(){
         if(all_tokens[token_index]->type == TOKEN_EOF){
             syntax_error();
         }
+        if(all_tokens[token_index]->type == TOKEN_IDENTIFIER){
+            set_usage(frameStack, all_tokens[token_index]->value);
+        }
         add_element(expr, all_tokens[token_index]);
         next_token();
     }
@@ -604,8 +666,11 @@ void var_rule(){
 	add_element(expr, end_token);
 
     print_expression(expr);
+
     TokenType expr_type = parse_expression(expr, frameStack);
+    printf("here\n");
     variable->type = type_compatibility(variable->type, expr_type, false);
+    build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "LF@supa_giga_expr_res", NULL); 
     printf("Variable ID: %s --- Variable type: %s\n", variable->id,tokenName[variable->type]);
     add_item(frameStack, variable);
     expect(TOKEN_SEMICOLON);
@@ -618,42 +683,65 @@ void var_rule(){
 void assigment_rule(){
     //inbuilt function call
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
+        if(search(frameStack, all_tokens[token_index]->value)->type != TOKEN_VOID){
+            error_exit(ERR_WRONG_PARAM_RET);
+        }
         expect(TOKEN_IDENTIFIER_FUNC);
-        function_call_rule();
+        function_call_rule(NULL);
         return;
     } 
-    Node *variable = search(frameStack, all_tokens[token_index]->value);
-    if(variable == NULL){
-        error_exit(ERR_UNDEF_VAR);
-    }
+    Node *variable = NULL;
 
-    expect(TOKEN_IDENTIFIER);
+    if(all_tokens[token_index]->type == TOKEN_IDENTIFIER){
+        expect(TOKEN_IDENTIFIER);
+        variable = search(frameStack, all_tokens[token_index-1]->value);
+        if(variable == NULL){
+            error_exit(ERR_DEFINE);
+        }
+    } else if (all_tokens[token_index]->type == TOKEN_UNDERLINE) {
+        expect(TOKEN_UNDERLINE);
+    } else {
+        syntax_error();
+    }
+    
+    
 
     //if the identifier was a user function identifier
     if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET){
-        function_call_rule();
+        if(search(frameStack, all_tokens[token_index]->value)->type != TOKEN_VOID){
+            error_exit(ERR_WRONG_PARAM_RET);
+        }
+        function_call_rule(NULL);
         return;
     }
     expect(TOKEN_ASSIGN);
     if(all_tokens[token_index]->type == TOKEN_STRING){
         error_exit(ERR_EXPR_TYPE);
     }
-    if(variable->t_const){
-        error_exit(ERR_UNDEF_VAR);
+    if(variable != NULL){
+        if(variable->t_const){
+            error_exit(ERR_UNDEF_VAR);
+        }
     }
 
     //inbuilt function call
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
         printf("here\n");
         if(search(frameStack, all_tokens[token_index]->value) == NULL){
-            
             error_exit(ERR_DEFINE);
         }
         expect(TOKEN_IDENTIFIER_FUNC);
+        
         TokenType expr_type = search(frameStack, all_tokens[token_index-1]->value)->type;
-        type_compatibility(variable->type, expr_type, false);
-        set_usage(frameStack, variable->id);
-        function_call_rule();
+        if(variable != NULL) {
+            type_compatibility(variable->type, expr_type, false);
+            set_usage(frameStack, variable->id);
+            printf("mama sdohla232\n");
+            function_call_rule(variable->id);
+            return;
+        }
+        printf("mama sdohla23\n");
+        function_call_rule(NULL);
         return;
     }
     //expression_rule();
@@ -678,7 +766,7 @@ void assigment_rule(){
         TokenType expr_type = search(frameStack, all_tokens[token_index-1]->value)->type;
         type_compatibility(variable->type, expr_type, false);
         set_usage(frameStack, variable->id);
-        function_call_rule();
+        function_call_rule(variable->id);
         build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "TF@return_value", NULL);
         return;
     }
@@ -708,6 +796,7 @@ void assigment_rule(){
 // //TODO free endtoken
     print_expression(expr);
     TokenType expr_type = parse_expression(expr, frameStack);
+    build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "LF@supa_giga_expr_res", NULL); 
     type_compatibility(variable->type, expr_type, false);
     expect(TOKEN_SEMICOLON);
     set_usage(frameStack, variable->id);
@@ -716,9 +805,9 @@ void assigment_rule(){
 }
 
 //<function_call> ::= ( <Arguments> );
-void function_call_rule(){
+void function_call_rule(char *id){
     printf("function call\n");
-    
+    bool builtin = false;
     Node *signature = NULL;
     token_index--;
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
@@ -727,6 +816,8 @@ void function_call_rule(){
             
             error_exit(ERR_DEFINE);
         }
+        
+        builtin = true;
         expect(TOKEN_IDENTIFIER_FUNC);
     } else {
         signature = search(frameStack, all_tokens[token_index]->value);
@@ -737,23 +828,29 @@ void function_call_rule(){
         expect(TOKEN_IDENTIFIER);
     }
     expect(TOKEN_LEFT_BRACKET);
-    build_instruction(instructionList, "CREATEFRAME", NULL, NULL, NULL);
     printNode(signature);
-    Param *temp_param = signature->params;
-    int i = 0;
-    while (temp_param != NULL) {
-        i++;
-        build_instruction(instructionList, "DEFVAR", _strcat("TF@param", itoa(i)), NULL, NULL);
-        temp_param = temp_param->next;
+    if(!builtin){
+        build_instruction(instructionList, "CREATEFRAME", NULL, NULL, NULL);
+        Param *temp_param = signature->params;
+        int i = 0;
+        while (temp_param != NULL) {
+            i++;
+            build_instruction(instructionList, "DEFVAR", _strcat("TF@param", itoa(i)), NULL, NULL);
+            temp_param = temp_param->next;
+        }
     }
-    parse_args(signature, token_index);
+    int curr_token = token_index;
+    parse_args(signature, token_index, builtin);
     arguments_rule();
+    if(builtin) build_builtin(signature->id, curr_token, id);
     expect(TOKEN_RIGHT_BRACKET);
     expect(TOKEN_SEMICOLON);
     printf("function call end\n");
-    build_instruction(instructionList, "DEFVAR", "TF@return_value", NULL, NULL);
-    build_instruction(instructionList, "PUSHFRAME", NULL, NULL, NULL);
-    build_instruction(instructionList, "CALL", signature->id, NULL, NULL);
+    if(!builtin){
+        build_instruction(instructionList, "DEFVAR", "TF@return_value", NULL, NULL);
+        build_instruction(instructionList, "PUSHFRAME", NULL, NULL, NULL);
+        build_instruction(instructionList, "CALL", signature->id, NULL, NULL);
+    }
     skip_comments();
 }
 
@@ -806,20 +903,19 @@ void print_param_list(const char *label, Param *head) {
     printf("%s: ", label);
     Param *current = head;
     while (current != NULL) {
-        printf("%d ", current->type);
+        printf("%s ", current->id);
         current = current->next;
     }
     printf("\n");
 }
 void build_arg_lit(int i){
-	float tmp;
-    char *tmp_str = NULL;
     switch(all_tokens[token_index]->type){
         case TOKEN_INT:
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("int@", all_tokens[token_index]->value), NULL);
             return;
         case TOKEN_FLOAT:
-            tmp = atof(all_tokens[token_index]->value);
+            float tmp = atof(all_tokens[token_index]->value);
+            char tmp_str[100];
             sprintf(tmp_str, "%a", tmp);
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("float@", tmp_str), NULL);
             return;
@@ -833,7 +929,7 @@ void build_arg_lit(int i){
     }
 }
 
-void parse_args(Node *signature, int index){
+void parse_args(Node *signature, int index, bool builtin){
     Param *param = signature->params;
     Param *args = NULL;
     int i = 0;
@@ -845,7 +941,7 @@ void parse_args(Node *signature, int index){
             syntax_error();
         }
         if(all_tokens[index]->type == TOKEN_IDENTIFIER){
-            build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("LF@", all_tokens[index]->value), NULL);
+            if(!builtin) build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("LF@", all_tokens[index]->value), NULL);
             Node *to_check = search(frameStack, all_tokens[index]->value);
             if(to_check == NULL){
                 error_exit(ERR_UNDEF_VAR);
@@ -869,7 +965,7 @@ void parse_args(Node *signature, int index){
             set_usage(frameStack, all_tokens[index]->value);
         }  
         if(is_lit(all_tokens[index]->type)){
-            build_arg_lit(i);
+            if(!builtin) build_arg_lit(i);
             Param *new_param = (Param *)malloc(sizeof(Param));
             if(new_param == NULL){
                 error_exit(ERR_INTERNAL);
@@ -1109,6 +1205,7 @@ void return_statement_rule(){
     Node *return_node = search(frameStack, "$return$");
     if(all_tokens[token_index]->type == TOKEN_SEMICOLON){
         expect(TOKEN_SEMICOLON);
+        printf("\n");
         build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
         build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
         return;
@@ -1125,7 +1222,7 @@ void return_statement_rule(){
         expect(TOKEN_IDENTIFIER_FUNC);
         TokenType ret_type = search(frameStack, all_tokens[token_index-1]->value)->type;
         type_compatibility(return_node->type, ret_type,false);
-        function_call_rule();
+        function_call_rule(NULL);
         return;
     }
 
@@ -1146,7 +1243,7 @@ void return_statement_rule(){
         TokenType expr_type = search(frameStack, all_tokens[token_index-1]->value)->type;
         printf("there\n");
         type_compatibility(return_node->type, expr_type,false);
-        function_call_rule();
+        function_call_rule(NULL);
         build_instruction(instructionList, "MOVE", "LF@return_value", "TF@return_value", NULL);
         build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
         build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
@@ -1179,15 +1276,16 @@ void return_statement_rule(){
 	end_token->value = "$";
 	add_element(expr, end_token);
 // //TODO free endtoken
-    build_instruction(instructionList, "DEFVAR", "LF@supa_giga_expr_res", NULL, NULL);
+    //build_instruction(instructionList, "DEFVAR", "LF@supa_giga_expr_res", NULL, NULL);
     print_expression(expr);
     TokenType expr_type = parse_expression(expr, frameStack);
     type_compatibility(return_node->type, expr_type,false);
 
     expect(TOKEN_SEMICOLON);
-    build_instruction(instructionList, "MOVE", "LF@return_value", "LF@supa_giga_expr_res", NULL);
+    build_instruction(instructionList, "MOVE", "LF@return_value", "LF@supa_giga_expr_res", NULL); 
     build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
     build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+
 }
 
 

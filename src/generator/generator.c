@@ -59,6 +59,9 @@ void print_instruction(Instruction *instruction) {
         arg = arg->next;
     }
     printf("\n");
+    if(!strcmp(instruction->opcode, "RETURN")){
+        printf("\n");
+    }
 }
 
 void print_instruction_list(InstructionList *il) {
