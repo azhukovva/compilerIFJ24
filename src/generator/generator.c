@@ -224,6 +224,22 @@ char* escape_sequence(char *s) {
     }
 
     for (int i = 0; i < strlength; i++) {
+		char slash[2] = {s[i], s[i+1]};
+		if (strcmp(slash, "\n") == 0) {
+		    string_id = _strcat(string_id, "\\010");
+			i++;
+			continue;
+		}
+		if (strcmp(slash, "\t") == 0) {
+		    string_id = _strcat(string_id, "\\009");
+			i++;
+			continue;
+		}
+		if (strcmp(slash, "\r") == 0) {
+		    string_id = _strcat(string_id, "\\013");
+			i++;
+			continue;
+		}
         if (regexec(&regex, &s[i], 1, pmatch, 0) == 0) {
             char hex[3] = {s[i+3], s[i+4], '\0'};
             int decimal = (int)strtol(hex, NULL, 16);
@@ -242,10 +258,8 @@ char* escape_sequence(char *s) {
         }
     }
     regfree(&regex);
+	printf("%s\n", string_id);
     return string_id;
 }
 
 
-int main(){
-	escape_sequence("retezec s lomitkem \\ a\x0Anovym#radkem");
-}
