@@ -30,4 +30,6 @@ void print_instruction_list(InstructionList *il);
 char *_strcat(const char *s1, const char *s2);
 char *itoa(int n);
 void reverse(char *str);
+void build_strcmp();
+void build_substring();
 #endif //GENERATOR_H

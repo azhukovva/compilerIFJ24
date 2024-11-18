@@ -85,7 +85,7 @@ int get_index(TokenType type){
 
 // Function to parse an expression using shift-reduce parsing
 TokenType parse_expression(Expression *expression, FrameStack *frameStack, bool from_main) {
-	intResCounter = 1;
+	//intResCounter = 1;
     TokenType result = TOKEN_EMPTY;
     // Initialize the stack
     Stack stack;

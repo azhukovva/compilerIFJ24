@@ -1,7 +1,7 @@
 #include "generator.h"
 
 
-
+extern InstructionList *instructionList;
 
 InstructionList *init_instruction_list() {
     InstructionList *list = (InstructionList *)malloc(sizeof(InstructionList));
@@ -114,4 +114,97 @@ void reverse(char *str) {
         start++;
         end--;
     }
+}
+
+void build_strcmp(){
+    build_instruction(instructionList, "LABEL", "ifj_strcmp", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@s1", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@s2", NULL, NULL);
+    build_instruction(instructionList, "MOV", "LF@s1", "LF@param1", NULL);
+    build_instruction(instructionList, "MOV", "LF@s2", "LF@param2", NULL);
+    // Compare s1 < s2
+    build_instruction(instructionList, "LT", "LF@return_value", "LF@s1", "LF@s2");
+    build_instruction(instructionList, "JUMPIFEQ", "label_lt", "LF@return_value", "bool@true");
+
+    // Compare s1 > s2
+    build_instruction(instructionList, "GT", "LF@return_value", "LF@s1", "LF@s2");
+    build_instruction(instructionList, "JUMPIFEQ", "label_gt", "LF@return_value", "bool@true");
+
+        // s1 == s2
+    build_instruction(instructionList, "MOVE", "LF@return_value", "int@0", NULL);
+    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+    build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+
+        // s1 < s2
+    build_instruction(instructionList, "LABEL", "label_lt", NULL, NULL);
+    build_instruction(instructionList, "MOVE", "LF@return_value", "int@-1", NULL);
+    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+    build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+
+        // s1 > s2
+    build_instruction(instructionList, "LABEL", "label_gt", NULL, NULL);
+    build_instruction(instructionList, "MOVE", "LF@return_value", "int@1", NULL);
+
+        // End 
+    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+    build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+
+}
+void build_substring(){
+    build_instruction(instructionList, "LABEL", "ifj_substring", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@s1", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@i", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@j", NULL, NULL);
+    build_instruction(instructionList, "MOV", "LF@s1", "LF@param1", NULL);
+    build_instruction(instructionList, "MOV", "LF@i", "LF@param2", NULL);
+    build_instruction(instructionList, "MOV", "LF@i", "LF@param3", NULL);
+    
+    build_instruction(instructionList, "DEFVAR", "LF@tmp_i", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@tmp_j", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@tmp_length", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@tmp_char", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@tmp_cond", NULL, NULL);
+     // Check if i < 0
+    build_instruction(instructionList, "LT", "LF@return_value", "LF@i", "int@0");
+    build_instruction(instructionList, "JUMPIFEQ", "label_null", "LF@return_value", "bool@true");
+
+        // Check if j < 0
+    build_instruction(instructionList, "LT", "LF@return_value", "LF@j", "int@0");
+    build_instruction(instructionList, "JUMPIFEQ", "label_null", "LF@return_value", "bool@true");
+
+        // Check if i > j
+    build_instruction(instructionList, "GT", "LF@return_value", "LF@i","LF@j");
+    build_instruction(instructionList, "JUMPIFEQ", "label_null", "LF@return_value", "bool@true");
+
+        // Check if i >= ifj.length(s)
+    build_instruction(instructionList, "STRLEN", "LF@tmp_length", "LF@s1", NULL);
+    build_instruction(instructionList, "LT", "LF@return_value", "LF@i", "LF@tmp_length");
+    build_instruction(instructionList, "NOT", "LF@return_value", "LF@return_value", NULL);
+    build_instruction(instructionList, "JUMPIFEQ", "label_null", "LF@return_value", "bool@true");
+
+        // Check if j > ifj.length(s)
+    build_instruction(instructionList, "GT", "LF@return_value","LF@j", "LF@tmp_length");
+    build_instruction(instructionList, "JUMPIFEQ", "label_null", "LF@return_value", "bool@true");
+     // Initialize loop variables
+    build_instruction(instructionList, "MOVE", "LF@tmp_i", "LF@i", NULL);
+    build_instruction(instructionList, "MOVE", "LF@tmp_j","LF@j", NULL);
+    build_instruction(instructionList, "MOVE", "LF@return_value", "string@", NULL);
+
+        // Loop to extract substring
+    build_instruction(instructionList, "LABEL", "label_loop", NULL, NULL);
+    build_instruction(instructionList, "GETCHAR", "LF@tmp_char", "LF@s1", "LF@tmp_i");
+    build_instruction(instructionList, "CONCAT", "LF@return_value", "LF@return_value", "LF@tmp_char");
+    build_instruction(instructionList, "ADD", "LF@tmp_i", "LF@tmp_i", "int@1");
+    build_instruction(instructionList, "LT", "LF@tmp_cond", "LF@tmp_i", "LF@tmp_j");
+    build_instruction(instructionList, "JUMPIFEQ", "label_loop", "LF@tmp_cond", "bool@true");
+
+        // End 
+    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+    build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+
+        // Null case
+    build_instruction(instructionList, "LABEL", "label_null", NULL, NULL);
+    build_instruction(instructionList, "MOVE", "LF@return_value", "nil@nil", NULL);
+    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+    build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
 }

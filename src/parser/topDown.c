@@ -3,14 +3,20 @@
 
 
 // extern const char *tokenName[];
- 
+//extern int intResCounter;
 //Current token pointer
 Token *all_tokens[100000];
 FrameStack *frameStack;
 int token_index = 0;
 bool encoutered_main = false;
 bool encountered_return = false;
+bool encountered_strcmp = false;
+bool encountered_substring = false;
 InstructionList *instructionList;
+int else_case_cnt = 0;
+int end_case_cnt = 0;
+int while_case_cnt = 0;
+int while_end_case_cnt = 0;
 
 char *my_strdup(const char *s) {
     size_t len = strlen(s) + 1;
@@ -299,10 +305,55 @@ void build_builtin(char *id, int curr_token, char *var_id, bool from_main){
         build_instruction(instructionList, "WRITE", build_builtin_lit_arg(params->type, params->id, from_main), NULL, NULL);
     } else if(strcmp(id, "ifj.length") == 0){
         build_instruction(instructionList, "STRLEN", _strcat(what_frame(from_main), var_id), build_builtin_lit_arg(params->type, params->id,from_main), NULL);
+    } else if(strcmp(id, "ifj.chr") == 0){
+        build_instruction(instructionList, "INT2CHAR", _strcat(what_frame(from_main), var_id), build_builtin_lit_arg(params->type, params->id,from_main), NULL);
+    } else if(strcmp(id, "ifj.ord") == 0){
+        build_instruction(instructionList, "STRI2INT", _strcat(what_frame(from_main), var_id), build_builtin_lit_arg(params->type, params->id, from_main), build_builtin_lit_arg(params->next->type, params->next->id, from_main));
+    } else if(strcmp(id, "ifj.strcmp") == 0){
+        build_instruction(instructionList, "CREATEFRAME", NULL, NULL, NULL);
+        build_instruction(instructionList, "DEFVAR", "TF@param1", NULL, NULL);
+        build_instruction(instructionList, "MOVE", "TF@param1", build_builtin_lit_arg(params->type, params->id, from_main), NULL);
+        build_instruction(instructionList, "DEFVAR", "TF@param2", NULL, NULL);
+        build_instruction(instructionList, "MOVE", "TF@param2", build_builtin_lit_arg(params->next->type, params->next->id, from_main), NULL);
+        build_instruction(instructionList, "DEFVAR", "TF@return_value", NULL, NULL);
+        build_instruction(instructionList, "PUSHFRAME", NULL, NULL, NULL);
+        build_instruction(instructionList, "CALL", "ifj_strcmp", NULL, NULL);
+        build_instruction(instructionList, "MOVE", _strcat(what_frame(from_main), var_id), "TF@return_value", NULL);
+        encountered_strcmp = true;
+    } else if(strcmp(id, "ifj.substring") == 0){
+        build_instruction(instructionList, "CREATEFRAME", NULL, NULL, NULL);
+        build_instruction(instructionList, "DEFVAR", "TF@param1", NULL, NULL);
+        build_instruction(instructionList, "MOVE", "TF@param1", build_builtin_lit_arg(params->type, params->id, from_main), NULL);
+        build_instruction(instructionList, "DEFVAR", "TF@param2", NULL, NULL);
+        build_instruction(instructionList, "MOVE", "TF@param2", build_builtin_lit_arg(params->next->type, params->next->id, from_main), NULL);
+        build_instruction(instructionList, "DEFVAR", "TF@param3", NULL, NULL);
+        build_instruction(instructionList, "MOVE", "TF@param3", build_builtin_lit_arg(params->next->next->type, params->next->next->id, from_main), NULL);
+        build_instruction(instructionList, "DEFVAR", "TF@return_value", NULL, NULL);
+        build_instruction(instructionList, "PUSHFRAME", NULL, NULL, NULL);
+        build_instruction(instructionList, "CALL", "ifj_substring", NULL, NULL);
+        build_instruction(instructionList, "MOVE", _strcat(what_frame(from_main), var_id), "TF@return_value", NULL);
+        encountered_substring = true;
     }
+    
    //print_param_list( "queres ?",params);
 }
 
+void parse_while( bool from_main, int index, bool in_while){
+    int nested = 0;
+    if(in_while) return;
+    while(all_tokens[index]->type != TOKEN_RIGHT_BRACE || nested != 0){
+        if((all_tokens[index]->type == TOKEN_VAR ||all_tokens[index]->type == TOKEN_CONST) && all_tokens[index+1]->type == TOKEN_IDENTIFIER ){
+            build_instruction(instructionList, "DEFVAR", _strcat(what_frame(from_main), all_tokens[index+1]->value), NULL, NULL);
+        }
+        if(all_tokens[index]->type == TOKEN_LEFT_BRACE){
+            nested = nested + 1;
+        }
+        if(all_tokens[index]->type == TOKEN_RIGHT_BRACE){
+            nested = nested - 1;
+        }
+        index++;
+    }
+}
 
 //Error handling 
 void syntax_error(){
@@ -392,10 +443,13 @@ void function_rule(){
     Node *fn = search(frameStack, all_tokens[token_index]->value);
     build_instruction(instructionList, "LABEL", all_tokens[token_index]->value, NULL, NULL);
     if(strcmp(fn->id, "main") == 0){
+        build_instruction(instructionList, "DEFVAR", "GF@PAMAGITI", NULL, NULL);
         build_instruction(instructionList, "DEFVAR", "GF@supa_giga_expr_res", NULL, NULL);
     } else {
+        build_instruction(instructionList, "DEFVAR", "LF@PAMAGITI", NULL, NULL);
         build_instruction(instructionList, "DEFVAR", "LF@supa_giga_expr_res", NULL, NULL);
     }
+    
     Param *temp_param = fn->params;
     int i = 0;
     while (temp_param != NULL) {
@@ -512,7 +566,7 @@ void return_type_rule(){
 void block_rule_fn(Node *fn, bool from_main){
     expect(TOKEN_LEFT_BRACE);
     add_frame(frameStack);
-    
+    skip_comments();
     Node *return_node = (Node *)malloc(sizeof(Node));
     if (return_node == NULL) {
         error_exit(ERR_INTERNAL);
@@ -534,7 +588,7 @@ void block_rule_fn(Node *fn, bool from_main){
     }
 
     printf("entering statements\n");
-    statements_rule(from_main);
+    statements_rule(from_main, false);
     expect(TOKEN_RIGHT_BRACE);
     printFrameStack(frameStack);
     removeFrame(frameStack);
@@ -546,16 +600,64 @@ void block_rule(){
     skip_comments();
     add_frame(frameStack);
     printf("entering statements\n");
-    statements_rule(false);
+    statements_rule(false, false);
     expect(TOKEN_RIGHT_BRACE);
     printFrameStack(frameStack);
     removeFrame(frameStack);
 }
 
+void if_block(bool from_main, int what_else_case){
+    expect(TOKEN_LEFT_BRACE);
+    skip_comments();
+    add_frame(frameStack);
+    printf("entering statements\n");
+    statements_rule(from_main, false);
+    expect(TOKEN_RIGHT_BRACE);
+    printFrameStack(frameStack);
+    removeFrame(frameStack);
+    if(all_tokens[token_index]->type == TOKEN_ELSE){
+        build_instruction(instructionList, "JUMP", _strcat("end_case", itoa(end_case_cnt)), NULL, NULL);
+    }
+    build_instruction(instructionList, "LABEL", _strcat("else_case", itoa(what_else_case)), NULL, NULL);
+}
+
+void else_block(bool from_main){
+    expect(TOKEN_LEFT_BRACE);
+    skip_comments();
+    add_frame(frameStack);
+    printf("entering statements\n");
+    statements_rule(from_main, false);
+    expect(TOKEN_RIGHT_BRACE);
+    printFrameStack(frameStack);
+    removeFrame(frameStack);
+    build_instruction(instructionList, "LABEL", _strcat("end_case", itoa(end_case_cnt)), NULL, NULL);
+    end_case_cnt++;
+}
+void while_block(bool from_main, int what_while_case, int what_while_end_case, Expression *expr, bool in_while, int pipe_index){
+    expect(TOKEN_LEFT_BRACE);
+    skip_comments();
+    add_frame(frameStack);
+    printf("entering statements\n");
+    statements_rule(from_main, in_while);
+    expect(TOKEN_RIGHT_BRACE);
+    printFrameStack(frameStack);
+    removeFrame(frameStack);
+    parse_expression(expr, frameStack, from_main);
+    if(all_tokens[pipe_index]->type == TOKEN_PIPE){
+        build_instruction(instructionList, "TYPE", _strcat(what_frame(from_main), "supa_giga_expr_res"), _strcat(what_frame(from_main), "supa_giga_expr_res"), NULL);
+        build_instruction(instructionList, "JUMPIFNEQ", _strcat("while_end_case_", itoa(what_while_end_case)), _strcat(what_frame(from_main), "supa_giga_expr_res"), "string@nil");
+    } else {
+        build_instruction(instructionList, "JUMPIFEQ", _strcat("while_case_", itoa(what_while_case)), _strcat(what_frame(from_main), "supa_giga_expr_res"),"bool@true");
+    }
+    build_instruction(instructionList, "LABEL", _strcat("while_end_case_", itoa(what_while_end_case)), NULL, NULL);
+    
+}
+
 // <Statements> ::= <Statement> <Statements> | eps
-void statements_rule(bool from_main){
+void statements_rule(bool from_main, bool in_while){
+    skip_comments();
     while(is_statement_start(all_tokens[token_index]->type)){
-        statement_rule(from_main);
+        statement_rule(from_main, in_while);
     }
 
     printf("exiting statements\n");
@@ -569,13 +671,13 @@ bool is_statement_start(TokenType type){
            type == TOKEN_IF || type == TOKEN_WHILE || type == TOKEN_RETURN || type == TOKEN_IDENTIFIER_FUNC || type == TOKEN_UNDERLINE;
 }
 
-void statement_rule(bool from_main){
+void statement_rule(bool from_main, bool in_while){
         skip_comments();
         switch (all_tokens[token_index]->type){
         case TOKEN_CONST:
         case TOKEN_VAR:
             printf("var\n");
-            var_rule(from_main);
+            var_rule(from_main, in_while);
             break;
         // assigment or function call
         case TOKEN_IDENTIFIER_FUNC:
@@ -585,10 +687,10 @@ void statement_rule(bool from_main){
             assigment_rule(from_main);
             break;
         case TOKEN_IF:
-            conditionals_rule();
+            conditionals_rule(from_main);
             break;
         case TOKEN_WHILE:
-            while_statement_rule();
+            while_statement_rule(from_main, in_while);
             break;
         case TOKEN_RETURN:
             return_statement_rule(from_main);
@@ -602,7 +704,7 @@ void statement_rule(bool from_main){
 }
 
 //<var_def> ::= <Var_mode> id <Var_type> = <Expression> ;
-void var_rule(bool from_main){
+void var_rule(bool from_main, bool in_while){
     skip_comments();
     
     Node *variable = (Node *)malloc(sizeof(Node));
@@ -621,12 +723,13 @@ void var_rule(bool from_main){
     }
     variable->fn = false;
     variable->id = all_tokens[token_index]->value;
-    if(from_main){
-        build_instruction(instructionList, "DEFVAR", _strcat("GF@", all_tokens[token_index]->value), NULL, NULL);
-    } else {
-        build_instruction(instructionList, "DEFVAR", _strcat("LF@", all_tokens[token_index]->value), NULL, NULL);
+    if(!in_while){
+        if(from_main){
+            build_instruction(instructionList, "DEFVAR", _strcat("GF@", all_tokens[token_index]->value), NULL, NULL);
+        } else {
+            build_instruction(instructionList, "DEFVAR", _strcat("LF@", all_tokens[token_index]->value), NULL, NULL);
+        }
     }
-        
 
     expect(TOKEN_IDENTIFIER);
     if(search(frameStack, variable->id) != NULL){
@@ -713,6 +816,7 @@ void var_rule(bool from_main){
     printf("Variable ID: %s --- Variable type: %s\n", variable->id,tokenName[variable->type]);
     add_item(frameStack, variable);
     expect(TOKEN_SEMICOLON);
+    skip_comments();
 
 }
 
@@ -846,6 +950,7 @@ void assigment_rule(bool from_main){
     }
     type_compatibility(variable->type, expr_type, false);
     expect(TOKEN_SEMICOLON);
+    skip_comments();
     set_usage(frameStack, variable->id);
     // free(token_copy);
     //free_expression(expr);
@@ -1093,7 +1198,9 @@ void literal_rule(){
 }
 
 //<Conditionals> ::= if ( Expression ) <Optional_null> <Block> <Optional_else>
-void conditionals_rule(){
+//TODO: add from_main flag as parameter
+void conditionals_rule(bool from_main){
+    skip_comments();
     expect(TOKEN_IF);
     expect(TOKEN_LEFT_BRACKET);
     //заглушка
@@ -1136,12 +1243,19 @@ void conditionals_rule(){
 	end_token->value = "$";
 	add_element(expr, end_token);
     print_expression(expr);
-    TokenType id_w_null = parse_expression(expr, frameStack, false);
-// //TODO free endtoken
-    //expect(TOKEN_RIGHT_BRACKET);
-    optional_null_rule(id_w_null);
-    block_rule();
-    optional_else_rule();
+    TokenType id_w_null = parse_expression(expr, frameStack, from_main);
+    else_case_cnt++;
+    if(all_tokens[token_index]->type == TOKEN_PIPE){
+        build_instruction(instructionList, "MOVE", _strcat(what_frame(from_main), "PAMAGITI"), _strcat(what_frame(from_main), "supa_giga_expr_res"), NULL);
+        build_instruction(instructionList, "TYPE", _strcat(what_frame(from_main), "supa_giga_expr_res"), _strcat(what_frame(from_main), "supa_giga_expr_res"), NULL);
+        build_instruction(instructionList, "JUMPIFNEQ", _strcat("else_case", itoa(else_case_cnt)), _strcat(what_frame(from_main), "supa_giga_expr_res"), "string@nil");
+    } else{
+        build_instruction(instructionList, "JUMPIFEQ", _strcat("else_case", itoa(else_case_cnt)), _strcat(what_frame(from_main), "supa_giga_expr_res"), "bool@false");
+    }
+    optional_null_rule(id_w_null, from_main, false);
+    if_block(from_main, else_case_cnt);
+    optional_else_rule(from_main);
+    skip_comments();
 }
 TokenType convert_from_opt(TokenType type){
     switch(type){
@@ -1157,7 +1271,7 @@ TokenType convert_from_opt(TokenType type){
 }
 
 //<Optional_null> ::= |id| | eps
-void optional_null_rule(TokenType id_w_null){
+void optional_null_rule(TokenType id_w_null, bool from_main, bool in_while){
     skip_comments();
    if(all_tokens[token_index]->type == TOKEN_PIPE){
        expect(TOKEN_PIPE);
@@ -1171,25 +1285,33 @@ void optional_null_rule(TokenType id_w_null){
         add_item(frameStack, variable);
        expect(TOKEN_IDENTIFIER);
        expect(TOKEN_PIPE);
+        if(!in_while){ 
+            build_instruction(instructionList, "DEFVAR", _strcat(what_frame(from_main), variable->id), NULL, NULL);
+            build_instruction(instructionList, "MOVE", _strcat(what_frame(from_main), variable->id), _strcat(what_frame(from_main), "PAMAGITI"), NULL);
+        }
    }
 }
 
 //<Optional_else> ::= else <else_body> | eps
-void optional_else_rule(){
+void optional_else_rule(bool from_main){
     skip_comments();
     if(all_tokens[token_index]->type == TOKEN_ELSE){
         expect(TOKEN_ELSE);
-        else_body_rule();
+        else_body_rule(from_main);
     }
 }
 //<else_body> ::= <Block> | <Conditionals>
-void else_body_rule(){
+void else_body_rule(bool from_main){
     skip_comments();
     if(all_tokens[token_index]->type == TOKEN_LEFT_BRACE){
         printf("else block\n");
-        block_rule();
+        skip_comments();
+        else_block(from_main);
+        skip_comments();
     } else if(all_tokens[token_index]->type == TOKEN_IF){
-        conditionals_rule();
+        skip_comments();
+        conditionals_rule(from_main);
+        skip_comments();
     } else {
         printf("else body error\n");
         syntax_error();
@@ -1197,8 +1319,10 @@ void else_body_rule(){
 }
 
 //<while_statement> ::= while ( Expression ) <Optional_null> <Block>
-void while_statement_rule(){
+// flag in_while to block DEFVARS in var_rule
+void while_statement_rule(bool from_main, bool in_while){
     printf("while\n");
+    skip_comments();
     expect(TOKEN_WHILE);
     expect(TOKEN_LEFT_BRACKET);
     //expression_rule();
@@ -1240,14 +1364,35 @@ void while_statement_rule(){
 	end_token->value = "$";
 	add_element(expr, end_token);
     print_expression(expr);
-    TokenType id_w_null = parse_expression(expr, frameStack, false);
+    TokenType id_w_null = parse_expression(expr, frameStack, from_main);
     //expect(TOKEN_RIGHT_BRACKET);
-    optional_null_rule(id_w_null);
-    block_rule();
+    parse_while(from_main, token_index, in_while);
+    in_while = true;
+    while_end_case_cnt++;
+    int pipe_index = token_index;
+    if(all_tokens[pipe_index]->type == TOKEN_PIPE){
+        build_instruction(instructionList, "DEFVAR", _strcat(what_frame(from_main), all_tokens[pipe_index+1]->value), NULL, NULL);
+        build_instruction(instructionList, "MOVE", _strcat(what_frame(from_main), "PAMAGITI"), _strcat(what_frame(from_main), "supe_giga_expr_res"), NULL);
+        build_instruction(instructionList, "TYPE", _strcat(what_frame(from_main), "supe_giga_expr_res"), _strcat(what_frame(from_main), "supe_giga_expr_res"), NULL);
+        build_instruction(instructionList, "JUMPIFNEQ", _strcat("while_end_case_", itoa(while_end_case_cnt)), _strcat(what_frame(from_main), "supe_giga_expr_res"), "string@nil");
+        while_case_cnt++;
+        build_instruction(instructionList, "LABEL", _strcat("while_case_", itoa(while_case_cnt)), NULL, NULL);
+        build_instruction(instructionList, "MOVE", _strcat(what_frame(from_main), all_tokens[pipe_index+1]->value), _strcat(what_frame(from_main), "PAMAGITI"), NULL);
+    }
+    else{
+        while_case_cnt++;
+        build_instruction(instructionList, "JUMPIFEQ", _strcat("while_end_case_", itoa(while_end_case_cnt)), _strcat(what_frame(from_main), "supa_giga_expr_res"), "bool@false");
+        build_instruction(instructionList, "LABEL", _strcat("while_case_", itoa(while_case_cnt)), NULL, NULL);
+    }
+    optional_null_rule(id_w_null, from_main, true);
+    while_block(from_main, while_case_cnt, while_end_case_cnt, expr, in_while, pipe_index);
+    in_while = false;
+    skip_comments();
 }
 
 //<return> ::= return <Expression_opt> ;
 void return_statement_rule(bool from_main){
+    skip_comments();
     expect(TOKEN_RETURN); 
     encountered_return = true;
     Node *return_node = search(frameStack, "$return$");
@@ -1255,10 +1400,8 @@ void return_statement_rule(bool from_main){
         expect(TOKEN_SEMICOLON);
         if(!from_main){
             build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
-            build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
-            return;
         }
-        build_instruction(instructionList, "EXIT", NULL, NULL, NULL);
+        build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
         return;
     }
     if(return_node->type == TOKEN_VOID){
@@ -1336,7 +1479,7 @@ void return_statement_rule(bool from_main){
     build_instruction(instructionList, "MOVE", "LF@return_value", "LF@supa_giga_expr_res", NULL); 
     build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
     build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
-
+    skip_comments();
 }
 
 
@@ -1359,14 +1502,21 @@ int main(){
     instructionList = init_instruction_list();
     build_instruction(instructionList, "JUMP", "main", NULL, NULL);
     program_rule();
+    
+     if(encountered_strcmp){
+        build_strcmp();
+     }
+     if(encountered_substring){
+        build_substring();
+     }
      if(encoutered_main){
-        printf("yep\n");
+        print_instruction_list(instructionList);
      } else{
         syntax_error();
      }
-    printFrameStack(frameStack);
+    //printFrameStack(frameStack);
      //free(current_token->value);
      //free(current_token);
-    print_instruction_list(instructionList);
+    
     return 0;
  }
