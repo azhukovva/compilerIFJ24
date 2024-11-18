@@ -497,7 +497,6 @@ void get_token(Token *token)
                 default:
                     if (c > 32)
                     {
-                        printf("Error: %c\n", c);
                         error_handler(ERR_LEX, token);
                     }
                     break;
@@ -687,40 +686,32 @@ void get_token(Token *token)
             }
             // REVIEW
         case sLiterContent:
-            // If we encounter a closing quote, we finish the string literal
             if (c == '"')
             {
                 token->type = TOKEN_STRING;
-                token->value = str.str; // The accumulated string in str
+                token->value = str.str; // This will be an empty string
                 isToken = 1;
                 break;
             }
-
-            // Continue adding characters to the string unless it's a backslash
             while ((c >= 35 || c == 32 || c == 33) && c != '\\')
             {
-                append_string(&str, c); // Append regular characters to str
-                c = read_char(stdin);   // Read next character
+                append_string(&str, c);
+                c = read_char(stdin);
             }
-
-            // If we encounter a backslash, handle escape sequence
             if (c == '\\')
             {
-                state = sEsc;           // Switch to escape state
-                append_string(&str, c); // Add the backslash to the string
+                state = sEsc;
+                append_string(&str, c);
                 break;
             }
-
-            // Handle closing quote (end of string literal)
             if (c == '"')
             {
-                state = sLiter; // Return to the literal state
+                state = sLiter;
                 token->type = TOKEN_STRING;
-                token->value = str.str; // The string content
+                token->value = str.str;
                 isToken = 1;
                 break;
             }
-            break;
 
         case sEsc:
             if (c == 'x')
@@ -747,21 +738,22 @@ void get_token(Token *token)
         case sHex:
             while (is_hex_digit(c))
             {
-                hex[idx] = c; // Store the hex digit
-                idx++;        // Increment the index
-                if (idx > 1)  // > 2
-                {
-                    error_handler(ERR_LEX, token); // Invalid hex escape sequence
-                }
-                if (idx == 1)
-                { // == 2
+                hex[idx++] = c;
+                if (idx == 2)
+                { 
                     hex[idx] = '\0';
                     char esc = (char)strtol(hex, NULL, 16); // Convert hex to char
                     append_string(&str, esc);
                     state = sLiterContent;
                     idx = 0;
+                    break;
                 }
                 c = read_char(stdin); // Read the next character
+            }
+            if (idx < 2 && state == sHex) 
+            {
+                error_handler(ERR_LEX, token); // Invalid hex escape sequence
+                state = sLiterContent;
             }
             break;
 
@@ -837,6 +829,7 @@ void get_token(Token *token)
 
         default:
             error_handler(ERR_LEX, token);
+  
             break;
         }
     }
