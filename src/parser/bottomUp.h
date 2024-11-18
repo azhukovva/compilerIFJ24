@@ -10,15 +10,15 @@
 #include "topDown.h"
 #include "../generator/generator.h"
 
-TokenType parse_expression(Expression *expression, FrameStack *frameStack);
+TokenType parse_expression(Expression *expression, FrameStack *frameStack, bool from_main);
 int get_index(TokenType type);
 char get_precedence(TokenType stack_top, TokenType input);
-void reduce(Stack *stack, FrameStack *frameStack);
+void reduce(Stack *stack, FrameStack *frameStack, bool from_main);
 void shift(Stack *stack, Token *token);
-void stack_reduce(Stack *stack, char *result);
+void stack_reduce(Stack *stack, char *result, bool from_main);
 char *relational(Stack *stack);
 char *eq(Stack *stack);
 char *arithmetic(Stack *stack);
-void operation_instruction(Stack *stack, char *tempregister);
-char *convert(char *value);
+void operation_instruction(Stack *stack, char *tempregister, bool from_main);
+char *convert(char *value, bool from_main);
 #endif //BOTTOMUP_H

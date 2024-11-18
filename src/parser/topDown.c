@@ -225,7 +225,8 @@ void fill_sym_table_fn(FrameStack *frameStack, int token_index) {
         token_index++;
     }
 }
-char* build_builtin_lit_arg(TokenType param_type, char *param_id){
+char* build_builtin_lit_arg(TokenType param_type, char *param_id, bool from_main){
+    printf("param_typeeeee: %s :: %s\n", tokenName[param_type], param_id);
     switch(param_type){
         case TOKEN_INT:
             return _strcat("int@", param_id);
@@ -234,14 +235,24 @@ char* build_builtin_lit_arg(TokenType param_type, char *param_id){
             char tmp_str[100];
             sprintf(tmp_str, "%a", tmp);
             return _strcat("float@", tmp_str);
+        case TOKEN_STRING:
+            return _strcat("string@", param_id);
         case TOKEN_IDENTIFIER:
-            return _strcat("LF@", param_id);
+            return _strcat(what_frame(from_main), param_id);
         default:
             return "";
     }
 }
 
-void build_builtin(char *id, int curr_token, char *var_id){
+char* what_frame(bool from_main){
+    if(from_main){
+        return "GF@";
+    } else {
+        return "LF@";
+    }
+}
+
+void build_builtin(char *id, int curr_token, char *var_id, bool from_main){
     Param *params = NULL;
     while(all_tokens[curr_token]->type != TOKEN_RIGHT_BRACKET){
       if(all_tokens[curr_token]->type == TOKEN_IDENTIFIER || is_lit(all_tokens[curr_token]->type)){
@@ -268,19 +279,28 @@ void build_builtin(char *id, int curr_token, char *var_id){
       }
       curr_token += 1;
     }
+    printf("var_id :: %s\n", id);
     printf("mama sdohla\n");
     //TokenType var_type = search(frameStack, var_id)->type;
-    printf("ya ebanat: %s\n", tokenName[params->type]);
+    //printf("ya ebanat: %s\n", tokenName[params->type]);
     if(strcmp(id, "ifj.i2f") == 0){
-        if(is_lit(params->type)){
-            build_instruction(instructionList, "INT2FLOAT", _strcat("LF@", var_id), build_builtin_lit_arg(params->type, params->id), NULL);
-        } else{
-            build_instruction(instructionList, "INT2FLOAT", _strcat("LF@", var_id), _strcat("LF@", params->id), NULL);
-        }
+        build_instruction(instructionList, "INT2FLOAT", _strcat(what_frame(from_main), var_id), build_builtin_lit_arg(params->type, params->id, from_main), NULL);
     } else if(strcmp(id, "ifj.f2i") == 0){
-        build_instruction(instructionList, "FLOAT2INT", _strcat("LF@", var_id), _strcat("LF@", params->id), NULL);
+        build_instruction(instructionList, "FLOAT2INT", _strcat(what_frame(from_main), var_id), build_builtin_lit_arg(params->type, params->id, from_main), NULL);
+    } else if(strcmp(id, "ifj.concat") == 0){
+        build_instruction(instructionList, "CONCAT", _strcat(what_frame(from_main), var_id), build_builtin_lit_arg(params->type, params->id, from_main),build_builtin_lit_arg(params->next->type, params->next->id, from_main));
+    } else if(strcmp(id, "ifj.readi32") == 0){
+        build_instruction(instructionList, "READ", _strcat(what_frame(from_main), var_id), "int", NULL);
+    } else if(strcmp(id, "ifj.readf64") == 0){
+        build_instruction(instructionList, "READ", _strcat(what_frame(from_main), var_id), "float", NULL);
+    } else if(strcmp(id, "ifj.readstr") == 0){
+        build_instruction(instructionList, "READ", _strcat(what_frame(from_main), var_id), "string", NULL);
+    } else if(strcmp(id, "ifj.write") == 0){
+        build_instruction(instructionList, "WRITE", build_builtin_lit_arg(params->type, params->id, from_main), NULL, NULL);
+    } else if(strcmp(id, "ifj.length") == 0){
+        build_instruction(instructionList, "STRLEN", _strcat(what_frame(from_main), var_id), build_builtin_lit_arg(params->type, params->id,from_main), NULL);
     }
-    print_param_list( "queres ?",params);
+   //print_param_list( "queres ?",params);
 }
 
 
@@ -371,7 +391,11 @@ void function_rule(){
     expect(TOKEN_FN);
     Node *fn = search(frameStack, all_tokens[token_index]->value);
     build_instruction(instructionList, "LABEL", all_tokens[token_index]->value, NULL, NULL);
-    build_instruction(instructionList, "DEFVAR", "LF@supa_giga_expr_res", NULL, NULL);
+    if(strcmp(fn->id, "main") == 0){
+        build_instruction(instructionList, "DEFVAR", "GF@supa_giga_expr_res", NULL, NULL);
+    } else {
+        build_instruction(instructionList, "DEFVAR", "LF@supa_giga_expr_res", NULL, NULL);
+    }
     Param *temp_param = fn->params;
     int i = 0;
     while (temp_param != NULL) {
@@ -386,7 +410,7 @@ void function_rule(){
         expect(TOKEN_IDENTIFIER);
         param_list_rule();
         return_type_rule();
-        block_rule_fn(fn);
+        block_rule_fn(fn, false);
         if(encountered_return == false && fn->type != TOKEN_VOID){
             printf("IN FUNC:   %s\n", fn->id);
             error_exit(ERR_MISS_OVERFL_RETURN);
@@ -397,11 +421,12 @@ void function_rule(){
 
 //<main_func> ::= pub fn main () void <Block>
 void main_func_rule(Node *fn){
+    bool from_main = true;
     expect_id("main");
     expect(TOKEN_LEFT_BRACKET);
     expect(TOKEN_RIGHT_BRACKET);
     expect(TOKEN_VOID);
-    block_rule_fn(fn);
+    block_rule_fn(fn, from_main);
     if(encountered_return == false && fn->type != TOKEN_VOID){
         error_exit(ERR_MISS_OVERFL_RETURN);
     }
@@ -484,7 +509,7 @@ void return_type_rule(){
 }
 
 // <Block> ::= { <Statements> } 
-void block_rule_fn(Node *fn){
+void block_rule_fn(Node *fn, bool from_main){
     expect(TOKEN_LEFT_BRACE);
     add_frame(frameStack);
     
@@ -509,7 +534,7 @@ void block_rule_fn(Node *fn){
     }
 
     printf("entering statements\n");
-    statements_rule();
+    statements_rule(from_main);
     expect(TOKEN_RIGHT_BRACE);
     printFrameStack(frameStack);
     removeFrame(frameStack);
@@ -521,16 +546,16 @@ void block_rule(){
     skip_comments();
     add_frame(frameStack);
     printf("entering statements\n");
-    statements_rule();
+    statements_rule(false);
     expect(TOKEN_RIGHT_BRACE);
     printFrameStack(frameStack);
     removeFrame(frameStack);
 }
 
 // <Statements> ::= <Statement> <Statements> | eps
-void statements_rule(){
+void statements_rule(bool from_main){
     while(is_statement_start(all_tokens[token_index]->type)){
-        statement_rule();
+        statement_rule(from_main);
     }
 
     printf("exiting statements\n");
@@ -544,20 +569,20 @@ bool is_statement_start(TokenType type){
            type == TOKEN_IF || type == TOKEN_WHILE || type == TOKEN_RETURN || type == TOKEN_IDENTIFIER_FUNC || type == TOKEN_UNDERLINE;
 }
 
-void statement_rule(){
+void statement_rule(bool from_main){
         skip_comments();
         switch (all_tokens[token_index]->type){
         case TOKEN_CONST:
         case TOKEN_VAR:
             printf("var\n");
-            var_rule();
+            var_rule(from_main);
             break;
         // assigment or function call
         case TOKEN_IDENTIFIER_FUNC:
         case TOKEN_IDENTIFIER:
         case TOKEN_UNDERLINE:
             printf("assignment\n");
-            assigment_rule();
+            assigment_rule(from_main);
             break;
         case TOKEN_IF:
             conditionals_rule();
@@ -566,7 +591,7 @@ void statement_rule(){
             while_statement_rule();
             break;
         case TOKEN_RETURN:
-            return_statement_rule();
+            return_statement_rule(from_main);
             break; 
         default:
             printf("XD?\n");
@@ -577,7 +602,7 @@ void statement_rule(){
 }
 
 //<var_def> ::= <Var_mode> id <Var_type> = <Expression> ;
-void var_rule(){
+void var_rule(bool from_main){
     skip_comments();
     
     Node *variable = (Node *)malloc(sizeof(Node));
@@ -596,7 +621,13 @@ void var_rule(){
     }
     variable->fn = false;
     variable->id = all_tokens[token_index]->value;
-    build_instruction(instructionList, "DEFVAR", _strcat("LF@", all_tokens[token_index]->value), NULL, NULL);
+    if(from_main){
+        build_instruction(instructionList, "DEFVAR", _strcat("GF@", all_tokens[token_index]->value), NULL, NULL);
+    } else {
+        build_instruction(instructionList, "DEFVAR", _strcat("LF@", all_tokens[token_index]->value), NULL, NULL);
+    }
+        
+
     expect(TOKEN_IDENTIFIER);
     if(search(frameStack, variable->id) != NULL){
         error_exit(ERR_UNDEF_VAR);
@@ -620,7 +651,7 @@ void var_rule(){
         expect(TOKEN_IDENTIFIER_FUNC);
         variable->type = type_compatibility(variable->type, search(frameStack, all_tokens[token_index-1]->value)->type, false);
         add_item(frameStack, variable);
-        function_call_rule(variable->id);
+        function_call_rule(variable->id, from_main);
         return;
     }
     //expression_rule();
@@ -636,8 +667,12 @@ void var_rule(){
     if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET && all_tokens[token_index-1]->type == TOKEN_IDENTIFIER){
         variable->type = type_compatibility(variable->type, search(frameStack, all_tokens[token_index-1]->value)->type, false);
         add_item(frameStack, variable);
-        function_call_rule(variable->id);
-        build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "TF@return_value", NULL);
+        function_call_rule(variable->id, from_main);
+        if(from_main){
+            build_instruction(instructionList, "MOVE", _strcat("GF@", variable->id), "TF@return_value", NULL);
+        } else {
+            build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "TF@return_value", NULL);
+        }
         return;
     }
     Expression *expr = (Expression *)malloc(sizeof(Expression));
@@ -667,10 +702,14 @@ void var_rule(){
 
     print_expression(expr);
 
-    TokenType expr_type = parse_expression(expr, frameStack);
+    TokenType expr_type = parse_expression(expr, frameStack, from_main);
     printf("here\n");
     variable->type = type_compatibility(variable->type, expr_type, false);
-    build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "LF@supa_giga_expr_res", NULL); 
+    if(from_main){
+        build_instruction(instructionList, "MOVE", _strcat("GF@", variable->id), "GF@supa_giga_expr_res", NULL);
+    } else {
+        build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "LF@supa_giga_expr_res", NULL);
+    }
     printf("Variable ID: %s --- Variable type: %s\n", variable->id,tokenName[variable->type]);
     add_item(frameStack, variable);
     expect(TOKEN_SEMICOLON);
@@ -680,14 +719,14 @@ void var_rule(){
 
 
 //<assigment> ::= id = <Expression> ;
-void assigment_rule(){
+void assigment_rule(bool from_main){
     //inbuilt function call
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
         if(search(frameStack, all_tokens[token_index]->value)->type != TOKEN_VOID){
             error_exit(ERR_WRONG_PARAM_RET);
         }
         expect(TOKEN_IDENTIFIER_FUNC);
-        function_call_rule(NULL);
+        function_call_rule(NULL, from_main);
         return;
     } 
     Node *variable = NULL;
@@ -711,7 +750,7 @@ void assigment_rule(){
         if(search(frameStack, all_tokens[token_index]->value)->type != TOKEN_VOID){
             error_exit(ERR_WRONG_PARAM_RET);
         }
-        function_call_rule(NULL);
+        function_call_rule(NULL, from_main);
         return;
     }
     expect(TOKEN_ASSIGN);
@@ -737,11 +776,11 @@ void assigment_rule(){
             type_compatibility(variable->type, expr_type, false);
             set_usage(frameStack, variable->id);
             printf("mama sdohla232\n");
-            function_call_rule(variable->id);
+            function_call_rule(variable->id, from_main);
             return;
         }
         printf("mama sdohla23\n");
-        function_call_rule(NULL);
+        function_call_rule(NULL, from_main);
         return;
     }
     //expression_rule();
@@ -766,8 +805,12 @@ void assigment_rule(){
         TokenType expr_type = search(frameStack, all_tokens[token_index-1]->value)->type;
         type_compatibility(variable->type, expr_type, false);
         set_usage(frameStack, variable->id);
-        function_call_rule(variable->id);
-        build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "TF@return_value", NULL);
+        function_call_rule(variable->id, from_main);
+        if(from_main){
+            build_instruction(instructionList, "MOVE", _strcat("GF@", variable->id), "TF@return_value", NULL);
+        } else {
+            build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "TF@return_value", NULL);
+        }
         return;
     }
     Expression *expr = (Expression *)malloc(sizeof(Expression));
@@ -795,8 +838,12 @@ void assigment_rule(){
 	add_element(expr, end_token);
 // //TODO free endtoken
     print_expression(expr);
-    TokenType expr_type = parse_expression(expr, frameStack);
-    build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "LF@supa_giga_expr_res", NULL); 
+    TokenType expr_type = parse_expression(expr, frameStack, from_main);
+    if(from_main){
+        build_instruction(instructionList, "MOVE", _strcat("GF@", variable->id), "GF@supa_giga_expr_res", NULL);
+    } else {
+        build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "LF@supa_giga_expr_res", NULL);
+    }
     type_compatibility(variable->type, expr_type, false);
     expect(TOKEN_SEMICOLON);
     set_usage(frameStack, variable->id);
@@ -805,7 +852,7 @@ void assigment_rule(){
 }
 
 //<function_call> ::= ( <Arguments> );
-void function_call_rule(char *id){
+void function_call_rule(char *id, bool from_main){
     printf("function call\n");
     bool builtin = false;
     Node *signature = NULL;
@@ -841,8 +888,8 @@ void function_call_rule(char *id){
     }
     int curr_token = token_index;
     parse_args(signature, token_index, builtin);
-    arguments_rule();
-    if(builtin) build_builtin(signature->id, curr_token, id);
+    arguments_rule();    
+    if(builtin) build_builtin(signature->id, curr_token, id, from_main);
     expect(TOKEN_RIGHT_BRACKET);
     expect(TOKEN_SEMICOLON);
     printf("function call end\n");
@@ -904,6 +951,7 @@ void print_param_list(const char *label, Param *head) {
     Param *current = head;
     while (current != NULL) {
         printf("%s ", current->id);
+        printf("%s ", tokenName[current->type]);
         current = current->next;
     }
     printf("\n");
@@ -1088,7 +1136,7 @@ void conditionals_rule(){
 	end_token->value = "$";
 	add_element(expr, end_token);
     print_expression(expr);
-    TokenType id_w_null = parse_expression(expr, frameStack);
+    TokenType id_w_null = parse_expression(expr, frameStack, false);
 // //TODO free endtoken
     //expect(TOKEN_RIGHT_BRACKET);
     optional_null_rule(id_w_null);
@@ -1192,22 +1240,25 @@ void while_statement_rule(){
 	end_token->value = "$";
 	add_element(expr, end_token);
     print_expression(expr);
-    TokenType id_w_null = parse_expression(expr, frameStack);
+    TokenType id_w_null = parse_expression(expr, frameStack, false);
     //expect(TOKEN_RIGHT_BRACKET);
     optional_null_rule(id_w_null);
     block_rule();
 }
 
 //<return> ::= return <Expression_opt> ;
-void return_statement_rule(){
+void return_statement_rule(bool from_main){
     expect(TOKEN_RETURN); 
     encountered_return = true;
     Node *return_node = search(frameStack, "$return$");
     if(all_tokens[token_index]->type == TOKEN_SEMICOLON){
         expect(TOKEN_SEMICOLON);
-        printf("\n");
-        build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
-        build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+        if(!from_main){
+            build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+            build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+            return;
+        }
+        build_instruction(instructionList, "EXIT", NULL, NULL, NULL);
         return;
     }
     if(return_node->type == TOKEN_VOID){
@@ -1222,7 +1273,7 @@ void return_statement_rule(){
         expect(TOKEN_IDENTIFIER_FUNC);
         TokenType ret_type = search(frameStack, all_tokens[token_index-1]->value)->type;
         type_compatibility(return_node->type, ret_type,false);
-        function_call_rule(NULL);
+        function_call_rule(NULL, from_main);
         return;
     }
 
@@ -1243,7 +1294,7 @@ void return_statement_rule(){
         TokenType expr_type = search(frameStack, all_tokens[token_index-1]->value)->type;
         printf("there\n");
         type_compatibility(return_node->type, expr_type,false);
-        function_call_rule(NULL);
+        function_call_rule(NULL, from_main);
         build_instruction(instructionList, "MOVE", "LF@return_value", "TF@return_value", NULL);
         build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
         build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
@@ -1278,7 +1329,7 @@ void return_statement_rule(){
 // //TODO free endtoken
     //build_instruction(instructionList, "DEFVAR", "LF@supa_giga_expr_res", NULL, NULL);
     print_expression(expr);
-    TokenType expr_type = parse_expression(expr, frameStack);
+    TokenType expr_type = parse_expression(expr, frameStack, from_main);
     type_compatibility(return_node->type, expr_type,false);
 
     expect(TOKEN_SEMICOLON);
