@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <regex.h>
 
 typedef struct Arg {
     char *value;
@@ -32,4 +32,5 @@ char *itoa(int n);
 void reverse(char *str);
 void build_strcmp();
 void build_substring();
+char* escape_sequence(char *s);
 #endif //GENERATOR_H

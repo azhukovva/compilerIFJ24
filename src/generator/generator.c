@@ -1,5 +1,6 @@
 #include "generator.h"
-
+#include <string.h>
+#include <regex.h>
 
 extern InstructionList *instructionList;
 
@@ -86,15 +87,16 @@ char *_strcat(const char *str1, const char *str2) {
 
     return result;
 }
+
 char *itoa(int n) {
     char *s = (char *)malloc(12);
     int i, sign;
-    if ((sign = n) < 0)  
-        n = -n;         
+    if ((sign = n) < 0)
+        n = -n;
     i = 0;
-    do {       
-        s[i++] = n % 10 + '0';   
-    } while ((n /= 10) > 0);     
+    do {
+        s[i++] = n % 10 + '0';
+    } while ((n /= 10) > 0);
     if (sign < 0)
         s[i++] = '-';
     s[i] = '\0';
@@ -145,7 +147,7 @@ void build_strcmp(){
     build_instruction(instructionList, "LABEL", "label_gt", NULL, NULL);
     build_instruction(instructionList, "MOVE", "LF@return_value", "int@1", NULL);
 
-        // End 
+        // End
     build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
     build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
 
@@ -158,7 +160,7 @@ void build_substring(){
     build_instruction(instructionList, "MOV", "LF@s1", "LF@param1", NULL);
     build_instruction(instructionList, "MOV", "LF@i", "LF@param2", NULL);
     build_instruction(instructionList, "MOV", "LF@i", "LF@param3", NULL);
-    
+
     build_instruction(instructionList, "DEFVAR", "LF@tmp_i", NULL, NULL);
     build_instruction(instructionList, "DEFVAR", "LF@tmp_j", NULL, NULL);
     build_instruction(instructionList, "DEFVAR", "LF@tmp_length", NULL, NULL);
@@ -198,7 +200,7 @@ void build_substring(){
     build_instruction(instructionList, "LT", "LF@tmp_cond", "LF@tmp_i", "LF@tmp_j");
     build_instruction(instructionList, "JUMPIFEQ", "label_loop", "LF@tmp_cond", "bool@true");
 
-        // End 
+        // End
     build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
     build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
 
@@ -207,4 +209,43 @@ void build_substring(){
     build_instruction(instructionList, "MOVE", "LF@return_value", "nil@nil", NULL);
     build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
     build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+}
+
+char* escape_sequence(char *s) {
+    char* string_id = "string@";
+    int strlength = strlen(s);
+    regex_t regex;
+    regmatch_t pmatch[1];
+    const char *pattern = "/x[0-9A-Fa-f]{2}";
+
+    if (regcomp(&regex, pattern, REG_EXTENDED) != 0) {
+        printf("Could not compile regex\n");
+        return NULL;
+    }
+
+    for (int i = 0; i < strlength; i++) {
+        if (regexec(&regex, &s[i], 1, pmatch, 0) == 0) {
+            char hex[3] = {s[i+3], s[i+4], '\0'};
+            int decimal = (int)strtol(hex, NULL, 16);
+            char tmp[4];
+            sprintf(tmp, "%d", decimal);
+            string_id = _strcat(string_id, tmp);
+            i += 4; // Skip the matched pattern
+        } else if (((int)s[i] <= 32 && (int)s[i] > 0) || (int)s[i] == 35 || (int)s[i] == 92) {
+            char* tmp = (char*)malloc(4);
+            sprintf(tmp, "%03d", (int)s[i]);
+            string_id = _strcat(string_id, "\\");
+            string_id = _strcat(string_id, tmp);
+        } else {
+            char tmp[2] = {s[i], '\0'}; // Convert char to string
+            string_id = _strcat(string_id, tmp);
+        }
+    }
+    regfree(&regex);
+    return string_id;
+}
+
+
+int main(){
+	escape_sequence("retezec s lomitkem \\ a\x0Anovym#radkem");
 }
