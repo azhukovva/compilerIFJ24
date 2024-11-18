@@ -242,7 +242,7 @@ char* build_builtin_lit_arg(TokenType param_type, char *param_id, bool from_main
             sprintf(tmp_str, "%a", tmp);
             return _strcat("float@", tmp_str);
         case TOKEN_STRING:
-            return _strcat("string@", param_id);
+            return escape_sequence(param_id);
         case TOKEN_IDENTIFIER:
             return _strcat(what_frame(from_main), param_id);
         default:
@@ -1073,6 +1073,7 @@ void build_arg_lit(int i){
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("float@", tmp_str), NULL);
             return;
         case TOKEN_STRING:
+            build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), escape_sequence(all_tokens[token_index]->value), NULL);
             return;
         case TOKEN_NULL:
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), "nil@nil", NULL);;
