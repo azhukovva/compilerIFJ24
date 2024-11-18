@@ -26,11 +26,11 @@ char *errorText(int error)
     case ERR_SYNTAX:
         return "Syntax error";
     case ERR_DEFINE:
-        return "Undefined or redefined function";
+        return "Undefined  function or variable";
     case ERR_WRONG_PARAM_RET:
         return "Wrong parameter or return value";
     case ERR_UNDEF_VAR:
-        return "Use of undefined variable";
+        return "Redefinition of variable or function; Assignment to constant variable";
     case ERR_MISS_OVERFL_RETURN:
         return "Missing or excess return value";
     case ERR_EXPR_TYPE:
@@ -38,7 +38,7 @@ char *errorText(int error)
     case ERR_EXPR_DERIV:
         return "Type derivation error";
     case ERR_VAR_OUT_OF_SCOPE:
-        return "Variable out of scope";
+        return "Variable out of scope; unused variable";
     case ERR_SEM_OTHER:
         return "Other semantic error";
     case ERR_INTERNAL:

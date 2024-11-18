@@ -4,12 +4,13 @@ void init_stack(Stack *stack) {
     stack->top = NULL;
 }
 
-void push(Stack *stack, Token *token) {
+void push(Stack *stack, Token *token, char *value) {
     StackElementPtr newElement = (StackElementPtr)malloc(sizeof(struct StackElement));
     if (newElement == NULL) {
         error_exit(ERR_INTERNAL);
     }
     newElement->data = token;
+    newElement->value = value;
     newElement->nextElement = stack->top;
     stack->top = newElement;
 }
@@ -25,11 +26,11 @@ Token *pop(Stack *stack) {
     return token;
 }
 
-Token *top(Stack *stack) {
+struct StackElement *top(Stack *stack) {
 	if (stack->top == NULL) {
         return NULL;
     }
-    return stack->top->data;
+    return stack->top;
 }
 
 void free_stack(Stack *stack) {
@@ -45,7 +46,7 @@ void print_stack(Stack *stack) {
     StackElementPtr current = stack->top;
     printf("---STACK---\n");
     while (current != NULL) {
-        printf("type: %s val: %s\n", tokenName[current->data->type], current->data->value);
+        printf("type: %s val: %s VALUE: %s\n", tokenName[current->data->type], current->data->value, current->value);
         current = current->nextElement;
     }
     printf("-----------\n");

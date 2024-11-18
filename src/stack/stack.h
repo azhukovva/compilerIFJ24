@@ -8,6 +8,7 @@
 
 typedef struct StackElement {
     Token *data;
+    char *value;
     struct StackElement *nextElement;
 } *StackElementPtr;
 
@@ -17,9 +18,9 @@ typedef struct {
 
 
 void init_stack(Stack *stack);
-void push(Stack *stack, Token *token);
+void push(Stack *stack, Token *token, char *value);
 Token *pop(Stack *stack);
-Token *top(Stack *stack);
+struct StackElement *top(Stack *stack);
 void free_stack(Stack *stack);
 void print_stack(Stack *stack);
 bool stackIsEmpty(Stack *stack);

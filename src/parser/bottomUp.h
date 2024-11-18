@@ -8,11 +8,17 @@
 #include "../stack/stack.h"
 #include "../expression/expression.h"
 #include "topDown.h"
+#include "../generator/generator.h"
 
-void parse_expression(Expression *expression);
+TokenType parse_expression(Expression *expression, FrameStack *frameStack, bool from_main);
 int get_index(TokenType type);
 char get_precedence(TokenType stack_top, TokenType input);
-void reduce(Stack *stack);
+void reduce(Stack *stack, FrameStack *frameStack, bool from_main);
 void shift(Stack *stack, Token *token);
-void stack_reduce(Stack *stack);
+void stack_reduce(Stack *stack, char *result, bool from_main);
+char *relational(Stack *stack);
+char *eq(Stack *stack);
+char *arithmetic(Stack *stack);
+void operation_instruction(Stack *stack, char *tempregister, bool from_main);
+char *convert(char *value, bool from_main);
 #endif //BOTTOMUP_H
