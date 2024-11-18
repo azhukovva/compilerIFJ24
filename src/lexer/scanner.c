@@ -171,6 +171,11 @@ bool is_digit(char c) // check if char is number
         return false;
 }
 
+int is_hex_digit(char c)
+{
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
 char read_char(FILE *fp)
 {
     char c = fgetc(fp);
@@ -191,6 +196,7 @@ bool match_string(const char *target, FILE *input)
 
 char escapeSequence(char *dec, Token *token)
 {
+
     if (strcmp(dec, "092") == 0)
         return '\\';
     if (strcmp(dec, "114") == 0)
@@ -240,6 +246,7 @@ void get_token(Token *token)
         c = read_char(stdin);
         char hex[8];
         int idx = 0;
+        int counter = 0;
         switch (state)
         {
         case sStart:
@@ -680,79 +687,81 @@ void get_token(Token *token)
             }
             // REVIEW
         case sLiterContent:
+            // If we encounter a closing quote, we finish the string literal
             if (c == '"')
             {
                 token->type = TOKEN_STRING;
-                token->value = str.str; // This will be an empty string
+                token->value = str.str; // The accumulated string in str
                 isToken = 1;
                 break;
             }
+
+            // Continue adding characters to the string unless it's a backslash
             while ((c >= 35 || c == 32 || c == 33) && c != '\\')
             {
-                append_string(&str, c);
-                c = read_char(stdin);
+                append_string(&str, c); // Append regular characters to str
+                c = read_char(stdin);   // Read next character
             }
+
+            // If we encounter a backslash, handle escape sequence
             if (c == '\\')
             {
-                state = sEsc;
-                append_string(&str, c);
+                state = sEsc;           // Switch to escape state
+                append_string(&str, c); // Add the backslash to the string
                 break;
             }
+
+            // Handle closing quote (end of string literal)
             if (c == '"')
             {
-                state = sLiter;
+                state = sLiter; // Return to the literal state
                 token->type = TOKEN_STRING;
-                token->value = str.str;
+                token->value = str.str; // The string content
                 isToken = 1;
                 break;
             }
+            break;
 
         case sEsc:
             if (c == 'x')
             {
-                state = sHex;
+                state = sHex; // Switch to hex state to process \x escape
+                counter = 0;  // Reset the counter for hex digits
+                idx = 0;      // Reset the index for hex digits
                 break;
             }
             else if (c == '"' || c == 'n' || c == 'r' || c == 't' || c == '\\')
             {
+                // Handle other escape sequences like \n, \t, etc.
                 state = sLiterContent;
-                append_string(&str, c);
+                append_string(&str, c); // Append the corresponding character
                 break;
             }
             else
-                error_handler(ERR_LEX, token);
-            break;
-            break;
-        case sHex:
-            if (c == '{')
             {
-                state = sHexContent;
+                error_handler(ERR_LEX, token); // Invalid escape sequence
                 break;
             }
-            else
-                error_handler(ERR_LEX, token);
             break;
 
-        case sHexContent:
-            while (is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
-            { // takes A-F, a-f, 1-9
-                hex[idx] = c;
-                c = read_char(stdin);
-                idx++;
-            }
-            if (c == '}')
+        case sHex:
+            while (is_hex_digit(c))
             {
-                idx = 0;
-                char *dec = malloc(sizeof(char) * 10);
-                strcpy(dec, hex_to_decimal(hex));
-                char esc = escapeSequence(dec, token);
-                append_string(&str, esc);
-                state = sLiterContent;
-                break;
-            }
-            else
-            {
-                error_handler(ERR_LEX, token);
+                hex[idx] = c; // Store the hex digit
+                idx++;        // Increment the index
+                if (idx > 1)  // > 2
+                {
+                    error_handler(ERR_LEX, token); // Invalid hex escape sequence
+                }
+                if (idx == 1)
+                { // == 2
+                    hex[idx] = '\0';
+                    char esc = (char)strtol(hex, NULL, 16); // Convert hex to char
+                    append_string(&str, esc);
+                    state = sLiterContent;
+                    idx = 0;
+                }
+                c = read_char(stdin); // Read the next character
             }
             break;
 
@@ -833,18 +842,18 @@ void get_token(Token *token)
     }
 }
 
-// int main()
-// {
-//     Token *token = init_token();
-//     char c;
-//     while ((c = read_char(stdin)) != EOF)
-//     {
-//         ungetc(c, stdin);
-//         get_token(token);
-//         print_token(token);
-//     }
-//     free(token);
-//     return 0;
-// }
+int main()
+{
+    Token *token = init_token();
+    char c;
+    while ((c = read_char(stdin)) != EOF)
+    {
+        ungetc(c, stdin);
+        get_token(token);
+        print_token(token);
+    }
+    free(token);
+    return 0;
+}
 
 #endif

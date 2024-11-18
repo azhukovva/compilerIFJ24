@@ -237,10 +237,12 @@ char* build_builtin_lit_arg(TokenType param_type, char *param_id, bool from_main
         case TOKEN_INT:
             return _strcat("int@", param_id);
         case TOKEN_FLOAT:
+        {
             float tmp = atof(param_id);
             char tmp_str[100];
             sprintf(tmp_str, "%a", tmp);
             return _strcat("float@", tmp_str);
+        }
         case TOKEN_STRING:
             return escape_sequence(param_id);
         case TOKEN_IDENTIFIER:
@@ -1067,11 +1069,13 @@ void build_arg_lit(int i){
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("int@", all_tokens[token_index]->value), NULL);
             return;
         case TOKEN_FLOAT:
+        {
             float tmp = atof(all_tokens[token_index]->value);
             char tmp_str[100];
             sprintf(tmp_str, "%a", tmp);
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("float@", tmp_str), NULL);
             return;
+        }
         case TOKEN_STRING:
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), escape_sequence(all_tokens[token_index]->value), NULL);
             return;
@@ -1485,39 +1489,39 @@ void return_statement_rule(bool from_main){
 
 
 
-int main(){
-    //fill all_tokens array with tokens
-     Token *current_token = init_token();
-    while (current_token->type != TOKEN_EOF) {
-        get_token(current_token);
-        save_token(current_token);
-    }
-    token_index = 0;
-    //init frame stack :)
-    frameStack = init_frameStack();
-    add_frame(frameStack);
-    fill_sym_table_fn(frameStack, token_index);
+// int main(){
+//     //fill all_tokens array with tokens
+//      Token *current_token = init_token();
+//     while (current_token->type != TOKEN_EOF) {
+//         get_token(current_token);
+//         save_token(current_token);
+//     }
+//     token_index = 0;
+//     //init frame stack :)
+//     frameStack = init_frameStack();
+//     add_frame(frameStack);
+//     fill_sym_table_fn(frameStack, token_index);
         
-    token_index = 0;
+//     token_index = 0;
     
-    instructionList = init_instruction_list();
-    build_instruction(instructionList, "JUMP", "main", NULL, NULL);
-    program_rule();
+//     instructionList = init_instruction_list();
+//     build_instruction(instructionList, "JUMP", "main", NULL, NULL);
+//     program_rule();
     
-     if(encountered_strcmp){
-        build_strcmp();
-     }
-     if(encountered_substring){
-        build_substring();
-     }
-     if(encoutered_main){
-        print_instruction_list(instructionList);
-     } else{
-        syntax_error();
-     }
-    //printFrameStack(frameStack);
-     //free(current_token->value);
-     //free(current_token);
+//      if(encountered_strcmp){
+//         build_strcmp();
+//      }
+//      if(encountered_substring){
+//         build_substring();
+//      }
+//      if(encoutered_main){
+//         print_instruction_list(instructionList);
+//      } else{
+//         syntax_error();
+//      }
+//     //printFrameStack(frameStack);
+//      //free(current_token->value);
+//      //free(current_token);
     
-    return 0;
- }
+//     return 0;
+//  }

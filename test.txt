@@ -1,11 +1,6 @@
 // Program 2: Vypocet faktorialu (rekurzivne)
 const ifj = @import("ifj24.zig");
 // Hlavni funkce
-pub fn main() void {
-    var l : i32 = my_func2(null) ;
-    l = my_func2(7.6);
-    return;
-}
 
 pub fn my_func2( x : ?f64 ) i32
 {
@@ -13,4 +8,14 @@ pub fn my_func2( x : ?f64 ) i32
 }
 pub fn func(x : i32) i32{
     return (7+x)*(x+7);
+}
+
+pub fn main() void {
+    
+    while(1) |Y|{
+        Y = Y + 5;
+    } 
+    ifj.write("Ahoj\n\"Sve'te \x22 \t \r");
+   
+    return;
 }
