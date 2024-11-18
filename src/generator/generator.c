@@ -224,18 +224,18 @@ char* escape_sequence(char *s) {
     }
 
     for (int i = 0; i < strlength; i++) {
-		char slash[2] = {s[i], s[i+1]};
-		if (strcmp(slash, "\n") == 0) {
+		char slash[3] = {s[i], s[i+1]};
+		if (strcmp(slash, "\\n") == 0) {
 		    string_id = _strcat(string_id, "\\010");
 			i++;
 			continue;
 		}
-		if (strcmp(slash, "\t") == 0) {
+		if (strcmp(slash, "\\t") == 0) {
 		    string_id = _strcat(string_id, "\\009");
 			i++;
 			continue;
 		}
-		if (strcmp(slash, "\r") == 0) {
+		if (strcmp(slash, "\\r") == 0) {
 		    string_id = _strcat(string_id, "\\013");
 			i++;
 			continue;
