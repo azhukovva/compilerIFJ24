@@ -246,7 +246,7 @@ void get_token(Token *token)
         c = read_char(stdin);
         char hex[8];
         int idx = 0;
-        int counter = 0;
+        //int counter = 0;
         switch (state)
         {
         case sStart:
@@ -436,7 +436,10 @@ void get_token(Token *token)
                         break;
                     }
                     else
+                    {
                         error_handler(ERR_LEX, token);
+                        break;
+                    }
                 case '?':
                     state = sQuestion;
                     c = read_char(stdin);
@@ -712,12 +715,12 @@ void get_token(Token *token)
                 isToken = 1;
                 break;
             }
-
+                break;
         case sEsc:
             if (c == 'x')
             {
                 state = sHex; // Switch to hex state to process \x escape
-                counter = 0;  // Reset the counter for hex digits
+                //counter = 0;  // Reset the counter for hex digits
                 idx = 0;      // Reset the index for hex digits
                 break;
             }

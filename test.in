@@ -7,6 +7,7 @@ const a = ifj.readi32();
 if (a) |val| {
 if (val < 0) {
 ifj.write("Faktorial "); ifj.write(val);
+
 ifj.write(" nelze spocitat\n");
 } else {
 var d: f64 = ifj.i2f(val);

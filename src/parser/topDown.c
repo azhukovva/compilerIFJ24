@@ -504,6 +504,9 @@ void main_func_rule(Node *fn){
         error_exit(ERR_MISS_OVERFL_RETURN);
     }
     encoutered_main = true;
+    if(encountered_return == false){
+        build_instruction(instructionList, "EXIT", "int@0", NULL, NULL);
+    }
     encountered_return = false;
 }
 
@@ -663,8 +666,9 @@ void while_block(bool from_main, int what_while_case, int what_while_end_case, E
     removeFrame(frameStack);
     parse_expression(expr, frameStack, from_main);
     if(all_tokens[pipe_index]->type == TOKEN_PIPE){
+        build_instruction(instructionList, "MOVE", _strcat(what_frame(from_main), "PAMAGITI"), _strcat(what_frame(from_main), "supa_giga_expr_res"), NULL);
         build_instruction(instructionList, "TYPE", _strcat(what_frame(from_main), "supa_giga_expr_res"), _strcat(what_frame(from_main), "supa_giga_expr_res"), NULL);
-        build_instruction(instructionList, "JUMPIFNEQ", _strcat("while_end_case_", itoa(what_while_end_case)), _strcat(what_frame(from_main), "supa_giga_expr_res"), "string@nil");
+        build_instruction(instructionList, "JUMPIFNEQ", _strcat("while_case_", itoa(what_while_end_case)), _strcat(what_frame(from_main), "supa_giga_expr_res"), "string@nil");
     } else {
         build_instruction(instructionList, "JUMPIFEQ", _strcat("while_case_", itoa(what_while_case)), _strcat(what_frame(from_main), "supa_giga_expr_res"),"bool@true");
     }
@@ -1038,7 +1042,15 @@ void function_call_rule(char *id, bool from_main){
 }
 
 bool is_lit(TokenType type){
-    return type == TOKEN_INT || type == TOKEN_FLOAT || type == TOKEN_STRING || type == TOKEN_NULL;
+    switch(type){
+        case TOKEN_INT:
+        case TOKEN_FLOAT:
+        case TOKEN_STRING:
+        case TOKEN_NULL:
+            return true;
+        default:
+            return false;
+    }
 }
 TokenType convert_from_lit(TokenType type){
     switch(type){
@@ -1087,30 +1099,32 @@ void check_param_lists(Param *param, Param *args){
 }
 
 // void print_param_list(const char *label, Param *head) {
-//     //printf("%s: ", label);
+//     printf("%s: ", label);
 //     Param *current = head;
 //     while (current != NULL) {
-//         //printf("%s ", current->id);
-//         //printf("%s ", tokenName[current->type]);
+//         printf("%s ", current->id);
+//         printf("%s ", tokenName[current->type]);
 //         current = current->next;
 //     }
-//     //printf("\n");
+//     printf("\n");
 // }
-void build_arg_lit(int i){
-    switch(all_tokens[token_index]->type){
+void build_arg_lit(int i,int index){
+    
+    switch(all_tokens[index]->type){
         case TOKEN_INT:
-            build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("int@", all_tokens[token_index]->value), NULL);
+            //printf("INT\n");
+            build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("int@", all_tokens[index]->value), NULL);
             return;
         case TOKEN_FLOAT:
         {
-            float tmp = atof(all_tokens[token_index]->value);
+            float tmp = atof(all_tokens[index]->value);
             char tmp_str[100];
             sprintf(tmp_str, "%a", tmp);
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("float@", tmp_str), NULL);
             return;
         }
         case TOKEN_STRING:
-            build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), escape_sequence(all_tokens[token_index]->value), NULL);
+            build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), escape_sequence(all_tokens[index]->value), NULL);
             return;
         case TOKEN_NULL:
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), "nil@nil", NULL);;
@@ -1125,13 +1139,14 @@ void parse_args(Node *signature, int index, bool builtin, bool from_main){
     Param *args = NULL;
     int i = 0;
     while(all_tokens[index]->type != TOKEN_RIGHT_BRACKET){
-        i++;
         //printf("ya ebal\n");
         if(all_tokens[index]->type == TOKEN_EOF){
             //printf("ya ebal\n");
             syntax_error();
         }
         if(all_tokens[index]->type == TOKEN_IDENTIFIER){
+            i++;
+            //printf("ARG ID :: %s, %s, %d\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value, i);
             if(!builtin) build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat(what_frame(from_main), all_tokens[index]->value), NULL);
             Node *to_check = search(frameStack, all_tokens[index]->value);
             if(to_check == NULL){
@@ -1156,7 +1171,9 @@ void parse_args(Node *signature, int index, bool builtin, bool from_main){
             set_usage(frameStack, all_tokens[index]->value);
         }  
         if(is_lit(all_tokens[index]->type)){
-            if(!builtin) build_arg_lit(i);
+            i++;
+            //printf("ARG LIT :: %s, %s, %d\n", tokenName[all_tokens[index]->type], all_tokens[index]->value, i);
+            if(!builtin) build_arg_lit(i, index);
             Param *new_param = (Param *)malloc(sizeof(Param));
             if(new_param == NULL){
                 error_exit(ERR_INTERNAL);
@@ -1180,8 +1197,8 @@ void parse_args(Node *signature, int index, bool builtin, bool from_main){
         }
         index++;
     }
-    // print_param_list("Signature", signature->params);
-    // print_param_list("Arguments", args);
+    //  print_param_list("Signature", signature->params);
+    //  print_param_list("Arguments", args);
     check_param_lists(param, args);
 }
 
@@ -1412,7 +1429,7 @@ void while_statement_rule(bool from_main, bool in_while){
         build_instruction(instructionList, "DEFVAR", _strcat(what_frame(from_main), all_tokens[pipe_index+1]->value), NULL, NULL);
         build_instruction(instructionList, "MOVE", _strcat(what_frame(from_main), "PAMAGITI"), _strcat(what_frame(from_main), "supa_giga_expr_res"), NULL);
         build_instruction(instructionList, "TYPE", _strcat(what_frame(from_main), "supa_giga_expr_res"), _strcat(what_frame(from_main), "supa_giga_expr_res"), NULL);
-        build_instruction(instructionList, "JUMPIFNEQ", _strcat("while_end_case_", itoa(while_end_case_cnt)), _strcat(what_frame(from_main), "supa_giga_expr_res"), "string@nil");
+        build_instruction(instructionList, "JUMPIFEQ", _strcat("while_end_case_", itoa(while_end_case_cnt)), _strcat(what_frame(from_main), "supa_giga_expr_res"), "string@nil");
         while_case_cnt++;
         build_instruction(instructionList, "LABEL", _strcat("while_case_", itoa(while_case_cnt)), NULL, NULL);
         build_instruction(instructionList, "MOVE", _strcat(what_frame(from_main), all_tokens[pipe_index+1]->value), _strcat(what_frame(from_main), "PAMAGITI"), NULL);

@@ -250,7 +250,10 @@ char *convert(char *value, bool from_main) {
     } else if (isdigit(value[0])) {
         // If it's just a number, add "int@"
         result = _strcat("int@", value);
-    } else {
+    } else if (strcmp(value, "null") == 0) {
+        // If it's "null", add "nil@"
+        result = "nil@nil";
+    } else{
         // Otherwise, it's an identifier, add "LF@"
         result = _strcat(what_frame(from_main), value);
     }
