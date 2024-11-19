@@ -70,28 +70,30 @@ void print_instruction_list(InstructionList *il) {
     Instruction *while_start = NULL;
     bool ignoreDefvar = false;
     char *while_case = NULL;
+
     while (current != NULL) {
         if (!ignoreDefvar && !strcmp(current->opcode, "LABEL") && strstr(current->args->value, "while_case_") != NULL) {
             int i = 11;
-            while (current->args->value[i] != '\0'){
-                char *tmp = (char *)malloc(2);
-                tmp[0] = current->args->value[i];
-                if (while_case){
-                    while_case = _strcat(while_case, tmp);
-                } else {
-                    while_case = tmp;
-                }
+            while_case = (char *)malloc(strlen(current->args->value) - 10);
+            while_case[0] = '\0';
+            while (current->args->value[i] != '\0') {
+                char tmp[2] = {current->args->value[i], '\0'};
+                strcat(while_case, tmp);
                 i++;
             }
             while_start = current;
-            while (!(!strcmp(current->opcode, "LABEL") && (!strcmp(current->args->value, _strcat("while_end_case_", while_case))))) {
+            char *end_case_label = (char *)malloc(strlen("while_end_case_") + strlen(while_case) + 1);
+            strcpy(end_case_label, "while_end_case_");
+            strcat(end_case_label, while_case);
+            while (!(!strcmp(current->opcode, "LABEL") && (!strcmp(current->args->value, end_case_label)))) {
                 if (!strcmp(current->opcode, "DEFVAR")) {
-                print_instruction(current);
-                current = current->next;
+                    print_instruction(current);
+                    current = current->next;
                 } else {
                     current = current->next;
                 }
             }
+            free(end_case_label);
             current = while_start;
             ignoreDefvar = true;
         }
@@ -99,17 +101,21 @@ void print_instruction_list(InstructionList *il) {
             current = current->next;
             continue;
         }
-        if (while_case != NULL){
-            if (!strcmp(current->opcode, "LABEL") && (!strcmp(current->args->value, _strcat("while_end_case_", while_case)))) {
+        if (while_case != NULL) {
+            char *end_case_label = (char *)malloc(strlen("while_end_case_") + strlen(while_case) + 1);
+            strcpy(end_case_label, "while_end_case_");
+            strcat(end_case_label, while_case);
+            if (!strcmp(current->opcode, "LABEL") && (!strcmp(current->args->value, end_case_label))) {
                 ignoreDefvar = false;
             }
+            free(end_case_label);
         }
 
         print_instruction(current);
         current = current->next;
     }
+    free(while_case);
 }
-
 char *_strcat(const char *str1, const char *str2) {
     size_t len1 = strlen(str1);
     size_t len2 = strlen(str2);
