@@ -10,7 +10,7 @@ FrameStack *init_frameStack(){
 }
 
 void add_frame(FrameStack *frameStack){
-    printf("Adding frame\n");   
+    //printf("Adding frame\n");   
     framePtr new_frame = (framePtr)malloc(sizeof(struct Frame));
     if (new_frame == NULL) {
         error_exit(ERR_INTERNAL);
@@ -19,30 +19,6 @@ void add_frame(FrameStack *frameStack){
     new_frame->nextFrame = frameStack->top;
     frameStack->top = new_frame;
 }
-
-//void add_item(FrameStack *frameStack, Node *node) {
-//    if (frameStack->top->root == NULL) {
-//        frameStack->top->root = node;
-//        return;
-//    }
-//    Node *current = frameStack->top->root;
-//    Node *parent = NULL;
-//    while (current != NULL) {
-//        parent = current;
-//        if (strcmp(current->id, node->id) == 0) {
-//            error_exit(ERR_SEM);
-//        } else if (strcmp(node->id, current->id) < 0) {
-//            current = current->left;
-//        } else {
-//            current = current->right;
-//        }
-//    }
-//    if (strcmp(node->id, parent->id) < 0) {
-//        parent->left = node;
-//    } else {
-//        parent->right = node;
-//    }
-//}
 
 // Utility function to get the height of the tree
 int getHeight(Node *node) {
@@ -174,7 +150,7 @@ Node *searchNode(Node *root, const char *id) {
 }
 
 Node *search(FrameStack *frameStack, const char *id) {
-   printf("Searching for %s\n", id);  
+   //printf("Searching for %s\n", id);  
     if (frameStack->top == NULL) {
         return NULL; // Empty stack or tree
     }

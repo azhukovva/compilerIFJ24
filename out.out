@@ -1,0 +1,60 @@
+.IFJcode24 
+JUMP main 
+LABEL main 
+DEFVAR GF@PAMAGITI 
+DEFVAR GF@supa_giga_expr_res 
+WRITE string@Zadejte\032cislo\032pro\032vypocet\032faktorialu\010 
+DEFVAR GF@a 
+READ GF@a int 
+MOVE GF@supa_giga_expr_res GF@a 
+MOVE GF@PAMAGITI GF@supa_giga_expr_res 
+TYPE GF@supa_giga_expr_res GF@supa_giga_expr_res 
+JUMPIFEQ else_case1 GF@supa_giga_expr_res string@nil 
+DEFVAR GF@val 
+MOVE GF@val GF@PAMAGITI 
+DEFVAR GF@$tmp1 
+LT GF@$tmp1 GF@val int@0 
+MOVE GF@supa_giga_expr_res GF@$tmp1 
+JUMPIFEQ else_case2 GF@supa_giga_expr_res bool@false 
+WRITE string@Faktorial\032 
+WRITE GF@val 
+WRITE string@\032nelze\032spocitat\010 
+JUMP end_case0 
+LABEL else_case2 
+DEFVAR GF@d 
+INT2FLOAT GF@d GF@val 
+DEFVAR GF@vysl 
+MOVE GF@supa_giga_expr_res float@0x1p+0 
+MOVE GF@vysl GF@supa_giga_expr_res 
+DEFVAR GF@$tmp2 
+DEFVAR GF@xDD
+INT2FLOAT GF@xDD int@0
+GT GF@$tmp2 GF@d GF@xDD 
+MOVE GF@supa_giga_expr_res GF@$tmp2 
+JUMPIFEQ while_end_case_1 GF@supa_giga_expr_res bool@false 
+LABEL while_case_1 
+DEFVAR GF@$tmp3 
+MUL GF@$tmp3 GF@vysl GF@d 
+MOVE GF@supa_giga_expr_res GF@$tmp3 
+MOVE GF@vysl GF@supa_giga_expr_res 
+DEFVAR GF@$tmp4 
+SUB GF@$tmp4 GF@d float@0x1p+0 
+MOVE GF@supa_giga_expr_res GF@$tmp4 
+MOVE GF@d GF@supa_giga_expr_res 
+DEFVAR GF@$tmp5 
+GT GF@$tmp5 GF@d GF@xDD 
+MOVE GF@supa_giga_expr_res GF@$tmp5 
+JUMPIFEQ while_case_1 GF@supa_giga_expr_res bool@true 
+LABEL while_end_case_1 
+WRITE string@Vysledek:\032 
+WRITE GF@vysl 
+WRITE string@\032=\032 
+DEFVAR GF@vysl_i32 
+FLOAT2INT GF@vysl_i32 GF@vysl 
+WRITE GF@vysl_i32 
+WRITE string@\010 
+LABEL end_case0 
+JUMP end_case1 
+LABEL else_case1 
+WRITE string@Faktorial\032pro\032null\032nelze\032spocitat\010 
+LABEL end_case1 

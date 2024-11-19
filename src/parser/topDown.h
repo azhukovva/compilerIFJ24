@@ -49,6 +49,7 @@ void block_rule_fn(Node *fn, bool from_main);
 void if_block(bool from_main, int what_else_case);
 void else_block(bool from_main);
 void while_block(bool from_main, int what_while_case, int what_while_end_case, Expression *expr, bool in_while, int pipe_index);
+void syntax_error();
 
 char* what_frame(bool from_main);
 TokenType convert_from_lit(TokenType type);
@@ -56,7 +57,7 @@ bool is_lit(TokenType type);
 TokenType type_compatibility(TokenType variable, TokenType expr_type, bool from_args);
 TokenType get_token_type(const char *type_str);
 bool is_statement_start(TokenType type);
-void parse_args(Node *signature, int index, bool builtin);
+void parse_args(Node *signature, int index, bool builtin, bool from_main);
 void build_builtin(char *id, int curr_token, char *var_id, bool from_main);
 void print_param_list(const char *label, Param *head);
 #endif //TOPDOWN_H

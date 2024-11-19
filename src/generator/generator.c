@@ -240,6 +240,11 @@ char* escape_sequence(char *s) {
 			i++;
 			continue;
 		}
+        if (strcmp(slash, "\\\"") == 0) {
+		    string_id = _strcat(string_id, "\\034");
+			i++;
+			continue;
+		}
         if (regexec(&regex, &s[i], 1, pmatch, 0) == 0) {
             char hex[3] = {s[i+3], s[i+4], '\0'};
             int decimal = (int)strtol(hex, NULL, 16);
@@ -258,7 +263,7 @@ char* escape_sequence(char *s) {
         }
     }
     regfree(&regex);
-	printf("%s\n", string_id);
+	//printf("%s\n", string_id);
     return string_id;
 }
 
