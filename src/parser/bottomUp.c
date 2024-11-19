@@ -315,7 +315,8 @@ char *assign_type(Token *topToken) {
     }
 }
 
-char* arithmetic(Stack *stack) {
+char* arithmetic(Stack *stack, bool from_main) {
+	char *tempregister;
     Token *left = stack->top->nextElement->nextElement->data;
     Token *right = stack->top->data;
     char *result = NULL;
@@ -336,10 +337,25 @@ char* arithmetic(Stack *stack) {
             } else {
                 result = "int";
             }
-        } else {
+        } else if (strstr(right->value, "float") != NULL && strstr(left->value, "int") != NULL) {
+			tempregister = _strcat("$tmp", itoa(intResCounter));
+			intResCounter++;
+			build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->nextElement->nextElement->value, from_main), NULL);
+			stack->top->nextElement->nextElement->value = tempregister;
+			stack->top->nextElement->nextElement->data->value = "float";
             //printf("mama sdohla tri\n");
             result = "float";
-        }
+        } else if (strstr(left->value, "float") != NULL && strstr(right->value, "int") != NULL) {
+			tempregister = _strcat("$tmp", itoa(intResCounter));
+			intResCounter++;
+			build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->value, from_main), NULL);
+			stack->top->value = tempregister;
+			stack->top->data->value = "float";
+            //printf("mama sdohla tri\n");
+            result = "float";
+		}
         if (strstr(right->value, "Const") != NULL && strstr(left->value, "Const") != NULL) {
             char *temp_result = (char *)malloc(strlen(result) + strlen("Const") + 1);
             if (temp_result == NULL) {
@@ -355,7 +371,8 @@ char* arithmetic(Stack *stack) {
     }
 }
 
-char* eq(Stack *stack) {
+char* eq(Stack *stack, bool from_main) {
+	char *tempregister;
     Token *left = stack->top->nextElement->nextElement->data;
     Token *right = stack->top->data;
     if (((strcmp(right->value, "null") == 0) && (strchr(left->value, '?') != NULL)) ||
@@ -371,9 +388,39 @@ char* eq(Stack *stack) {
             return "int";
         } else if ((strcmp(right->value, "floatConstConv") == 0 && strstr(left->value, "int") != NULL) ||
                   (strcmp(left->value, "floatConstConv") == 0 && strstr(right->value, "int") != NULL)) {
-            return "int";
+			if (strcmp(right->value, "floatConstConv") == 0) {
+	            tempregister = _strcat("$tmp", itoa(intResCounter));
+				intResCounter++;
+				build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+				build_instruction(instructionList, "FLOAT2INT", convert(tempregister, from_main), convert(stack->top->value, from_main), NULL);
+				stack->top->value = tempregister;
+				stack->top->data->value = "intConst";
+            } else {
+	            tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "FLOAT2INT", convert(tempregister, from_main), convert(stack->top->nextElement->nextElement->value, from_main), NULL);
+			    stack->top->nextElement->nextElement->value = tempregister;
+			    stack->top->nextElement->nextElement->data->value = "intConst";
+			}
+			return "int";
         } else if ((strstr(right->value, "float") != NULL && strstr(left->value, "int") != NULL) ||
                   (strstr(left->value, "float") != NULL && strstr(right->value, "int") != NULL)) {
+			if (strstr(right->value, "int") != NULL) {
+                tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->value, from_main), NULL);
+			    stack->top->value = tempregister;
+			    stack->top->data->value = "float";
+			} else {
+                tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->nextElement->nextElement->value, from_main), NULL);
+			    stack->top->nextElement->nextElement->value = tempregister;
+			    stack->top->nextElement->nextElement->data->value = "float";
+			}
             return "int";
         } else {
             error_exit(ERR_EXPR_TYPE);
@@ -385,7 +432,8 @@ char* eq(Stack *stack) {
     }
 }
 
-char* relational(Stack *stack) {
+char* relational(Stack *stack, bool from_main) {
+	char *tempregister;
     Token *left = stack->top->nextElement->nextElement->data;
     Token *right = stack->top->data;
     if ((strcmp(right->value, "null") == 0) || (strchr(left->value, '?') != NULL) ||
@@ -401,9 +449,39 @@ char* relational(Stack *stack) {
             return "int";
         } else if ((strcmp(right->value, "floatConstConv") == 0 && strstr(left->value, "int") != NULL) ||
                   (strcmp(left->value, "floatConstConv") == 0 && strstr(right->value, "int") != NULL)) {
-            return "int";
+			if (strcmp(right->value, "floatConstConv") == 0) {
+	            tempregister = _strcat("$tmp", itoa(intResCounter));
+				intResCounter++;
+				build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+				build_instruction(instructionList, "FLOAT2INT", convert(tempregister, from_main), convert(stack->top->value, from_main), NULL);
+				stack->top->value = tempregister;
+				stack->top->data->value = "intConst";
+            } else {
+	            tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "FLOAT2INT", convert(tempregister, from_main), convert(stack->top->nextElement->nextElement->value, from_main), NULL);
+			    stack->top->nextElement->nextElement->value = tempregister;
+			    stack->top->nextElement->nextElement->data->value = "intConst";
+			}
+			return "int";
         } else if ((strstr(right->value, "float") != NULL && strstr(left->value, "int") != NULL) ||
                   (strstr(left->value, "float") != NULL && strstr(right->value, "int") != NULL)) {
+			if (strstr(right->value, "int") != NULL) {
+                tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->value, from_main), NULL);
+			    stack->top->value = tempregister;
+			    stack->top->data->value = "float";
+			} else {
+                tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->nextElement->nextElement->value, from_main), NULL);
+			    stack->top->nextElement->nextElement->value = tempregister;
+			    stack->top->nextElement->nextElement->data->value = "float";
+			}
             return "int";
         } else {
             error_exit(ERR_EXPR_TYPE);
@@ -444,70 +522,70 @@ void reduce(Stack *stack, FrameStack *frameStack, bool from_main) {
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_PLUS && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E + E
         //printf("Reducing: E -> E + E\n");
-        result = arithmetic(stack);
+        result = arithmetic(stack, from_main);
 		stack_reduce(stack, result, from_main);
 		//print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_MINUS && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E - E
         //printf("Reducing: E -> E - E\n");
-        result = arithmetic(stack);
+        result = arithmetic(stack, from_main);
         stack_reduce(stack, result, from_main);
         //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_MULTIPLY && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E * E
         //printf("Reducing: E -> E * E\n");
-        result = arithmetic(stack);
+        result = arithmetic(stack, from_main);
         stack_reduce(stack, result, from_main);
         //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_DIVIDE && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E / E
         //printf("Reducing: E -> E / E\n");
-        result = arithmetic(stack);
+        result = arithmetic(stack, from_main);
         stack_reduce(stack, result, from_main);
         //print_stack(stack);
     }
 	else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_LESS_THAN && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E < E
         //printf("Reducing: E -> E < E\n");
-        result = relational(stack);
+        result = relational(stack, from_main);
         stack_reduce(stack, result, from_main);
         //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_GREATER_THAN && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E > E
         //printf("Reducing: E -> E > E\n");
-        result = relational(stack);
+        result = relational(stack, from_main);
         stack_reduce(stack, result, from_main);
         //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_LESS_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E <= E
         //printf("Reducing: E -> E <= E\n");
-        result = relational(stack);
+        result = relational(stack, from_main);
         stack_reduce(stack, result, from_main);
         //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_GREATER_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E >= E
         //printf("Reducing: E -> E >= E\n");
-        result = relational(stack);
+        result = relational(stack, from_main);
         stack_reduce(stack, result, from_main);
         //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E == E
         //printf("Reducing: E -> E == E\n");
-        result = eq(stack);
+        result = eq(stack, from_main);
         stack_reduce(stack, result, from_main);
         //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_NOT_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E != E
         //printf("Reducing: E -> E != E\n");
-        result = eq(stack);
+        result = eq(stack, from_main);
         stack_reduce(stack, result, from_main);
         //print_stack(stack);
     }

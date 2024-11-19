@@ -67,7 +67,44 @@ void print_instruction(Instruction *instruction) {
 
 void print_instruction_list(InstructionList *il) {
     Instruction *current = il->head;
+    Instruction *while_start = NULL;
+    bool ignoreDefvar = false;
+    char *while_case = NULL;
     while (current != NULL) {
+        if (!ignoreDefvar && !strcmp(current->opcode, "LABEL") && strstr(current->args->value, "while_case_") != NULL) {
+            int i = 11;
+            while (current->args->value[i] != '\0'){
+                char *tmp = (char *)malloc(2);
+                tmp[0] = current->args->value[i];
+                if (while_case){
+                    while_case = _strcat(while_case, tmp);
+                } else {
+                    while_case = tmp;
+                }
+                i++;
+            }
+            while_start = current;
+            while (!(!strcmp(current->opcode, "LABEL") && (!strcmp(current->args->value, _strcat("while_end_case_", while_case))))) {
+                if (!strcmp(current->opcode, "DEFVAR")) {
+                print_instruction(current);
+                current = current->next;
+                } else {
+                    current = current->next;
+                }
+            }
+            current = while_start;
+            ignoreDefvar = true;
+        }
+        if (ignoreDefvar && !strcmp(current->opcode, "DEFVAR")) {
+            current = current->next;
+            continue;
+        }
+        if (while_case != NULL){
+            if (!strcmp(current->opcode, "LABEL") && (!strcmp(current->args->value, _strcat("while_end_case_", while_case)))) {
+                ignoreDefvar = false;
+            }
+        }
+
         print_instruction(current);
         current = current->next;
     }
@@ -266,5 +303,4 @@ char* escape_sequence(char *s) {
 	//printf("%s\n", string_id);
     return string_id;
 }
-
 

@@ -16,9 +16,9 @@ char get_precedence(TokenType stack_top, TokenType input);
 void reduce(Stack *stack, FrameStack *frameStack, bool from_main);
 void shift(Stack *stack, Token *token);
 void stack_reduce(Stack *stack, char *result, bool from_main);
-char *relational(Stack *stack);
-char *eq(Stack *stack);
-char *arithmetic(Stack *stack);
+char *relational(Stack *stack, bool from_main);
+char *eq(Stack *stack, bool from_main);
+char *arithmetic(Stack *stack, bool from_main);
 void operation_instruction(Stack *stack, char *tempregister, bool from_main);
 char *convert(char *value, bool from_main);
 #endif //BOTTOMUP_H
