@@ -43,14 +43,31 @@ typedef struct InstructionList {
 } InstructionList;
 
 InstructionList *init_instruction_list();
+
+// push the instruction to the end of the list
 void push_instruction(InstructionList *il, Instruction *instruction);
+
+// create new instruction and push it to the list
 void build_instruction(InstructionList *il, char *opcode, char *arg1, char *arg2, char *arg3);
+
+// print the instruction
 void print_instruction(Instruction *instruction);
+
+// print the whole list of instructions
 void print_instruction_list(InstructionList *il);
+
+// concatenate two strings
 char *_strcat(const char *s1, const char *s2);
+
 char *itoa(int n);
 void reverse(char *str);
+
+// function to build instructions for built-in ifj.strcmp function
 void build_strcmp();
+
+// function to build instructions for built-in ifj.substring function
 void build_substring();
+
+// function to convert a string to a ifj24code format
 char* escape_sequence(char *s);
 #endif //GENERATOR_H

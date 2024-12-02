@@ -33,7 +33,7 @@ InstructionList *init_instruction_list() {
     return list;
 }
 
-
+// push the instruction to the end of the list
 void push_instruction(InstructionList *il, Instruction *instruction) {
     if (il->head == NULL) {
         il->head = instruction;
@@ -44,8 +44,8 @@ void push_instruction(InstructionList *il, Instruction *instruction) {
     }
 }
 
-//build_instruction(il, "ADD", strcat("LF@", token->data->id), "int@5", null);
 
+// create new instruction and push it to the list
 void build_instruction(InstructionList *il, char *opcode, char *arg1, char *arg2, char *arg3) {
     Instruction *instruction = (Instruction *)malloc(sizeof(Instruction));
     instruction->opcode = opcode;
@@ -71,6 +71,7 @@ void build_instruction(InstructionList *il, char *opcode, char *arg1, char *arg2
     push_instruction(il, instruction);
 }
 
+// print the instruction
 void print_instruction(Instruction *instruction) {
     printf("%s ", instruction->opcode);
     Arg *arg = instruction->args;
@@ -84,12 +85,13 @@ void print_instruction(Instruction *instruction) {
     }
 }
 
+//print the whole list of instructions
 void print_instruction_list(InstructionList *il) {
     Instruction *current = il->head;
     Instruction *while_start = NULL;
     bool ignoreDefvar = false;
     char *while_case = NULL;
-
+    // print variable definitions out the while loops
     while (current != NULL) {
         if (!ignoreDefvar && !strcmp(current->opcode, "LABEL") && strstr(current->args->value, "while_case_") != NULL) {
             int i = 11;
@@ -135,6 +137,8 @@ void print_instruction_list(InstructionList *il) {
     }
     free(while_case);
 }
+
+// concatenate two strings
 char *_strcat(const char *str1, const char *str2) {
     size_t len1 = strlen(str1);
     size_t len2 = strlen(str2);
@@ -180,72 +184,75 @@ void reverse(char *str) {
     }
 }
 
+// function to build instructions for built-in ifj.strcmp function
 void build_strcmp(){
-build_instruction(instructionList, "LABEL", "ifj_strcmp", NULL, NULL);
-build_instruction(instructionList, "DEFVAR", "LF@s1", NULL, NULL);
-build_instruction(instructionList, "DEFVAR", "LF@s2", NULL, NULL);
-build_instruction(instructionList, "DEFVAR", "LF@i", NULL, NULL);
-build_instruction(instructionList, "DEFVAR", "LF@char1", NULL, NULL);
-build_instruction(instructionList, "DEFVAR", "LF@char2", NULL, NULL);
-build_instruction(instructionList, "DEFVAR", "LF@len1", NULL, NULL);
-build_instruction(instructionList, "DEFVAR", "LF@len2", NULL, NULL);
-build_instruction(instructionList, "DEFVAR", "LF@cond", NULL, NULL);
-build_instruction(instructionList, "MOVE", "LF@s1", "LF@param1", NULL);
-build_instruction(instructionList, "MOVE", "LF@s2", "LF@param2", NULL);
-build_instruction(instructionList, "MOVE", "LF@i", "int@0", NULL);
+    build_instruction(instructionList, "LABEL", "ifj_strcmp", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@s1", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@s2", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@i", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@char1", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@char2", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@len1", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@len2", NULL, NULL);
+    build_instruction(instructionList, "DEFVAR", "LF@cond", NULL, NULL);
+    build_instruction(instructionList, "MOVE", "LF@s1", "LF@param1", NULL);
+    build_instruction(instructionList, "MOVE", "LF@s2", "LF@param2", NULL);
+    build_instruction(instructionList, "MOVE", "LF@i", "int@0", NULL);
 
-// Loop to compare characters
-build_instruction(instructionList, "LABEL", "label_loop", NULL, NULL);
-build_instruction(instructionList, "STRLEN", "LF@len1", "LF@s1", NULL);
-build_instruction(instructionList, "STRLEN", "LF@len2", "LF@s2", NULL);
-build_instruction(instructionList, "LT", "LF@cond", "LF@i", "LF@len1");
-build_instruction(instructionList, "JUMPIFEQ", "label_end", "LF@cond", "bool@false");
-build_instruction(instructionList, "LT", "LF@cond", "LF@i", "LF@len2");
-build_instruction(instructionList, "JUMPIFEQ", "label_end", "LF@cond", "bool@false");
+    // Loop to compare characters
+    build_instruction(instructionList, "LABEL", "label_loop", NULL, NULL);
+    build_instruction(instructionList, "STRLEN", "LF@len1", "LF@s1", NULL);
+    build_instruction(instructionList, "STRLEN", "LF@len2", "LF@s2", NULL);
+    build_instruction(instructionList, "LT", "LF@cond", "LF@i", "LF@len1");
+    build_instruction(instructionList, "JUMPIFEQ", "label_end", "LF@cond", "bool@false");
+    build_instruction(instructionList, "LT", "LF@cond", "LF@i", "LF@len2");
+    build_instruction(instructionList, "JUMPIFEQ", "label_end", "LF@cond", "bool@false");
 
-build_instruction(instructionList, "GETCHAR", "LF@char1", "LF@s1", "LF@i");
-build_instruction(instructionList, "GETCHAR", "LF@char2", "LF@s2", "LF@i");
-build_instruction(instructionList, "EQ", "LF@cond", "LF@char1", "LF@char2");
-build_instruction(instructionList, "JUMPIFEQ", "label_continue", "LF@cond", "bool@true");
+    build_instruction(instructionList, "GETCHAR", "LF@char1", "LF@s1", "LF@i");
+    build_instruction(instructionList, "GETCHAR", "LF@char2", "LF@s2", "LF@i");
+    build_instruction(instructionList, "EQ", "LF@cond", "LF@char1", "LF@char2");
+    build_instruction(instructionList, "JUMPIFEQ", "label_continue", "LF@cond", "bool@true");
 
-build_instruction(instructionList, "LT", "LF@return_value", "LF@char1", "LF@char2");
-build_instruction(instructionList, "JUMPIFEQ", "label_lt", "LF@return_value", "bool@true");
-build_instruction(instructionList, "GT", "LF@return_value", "LF@char1", "LF@char2");
-build_instruction(instructionList, "JUMPIFEQ", "label_gt", "LF@return_value", "bool@true");
+    build_instruction(instructionList, "LT", "LF@return_value", "LF@char1", "LF@char2");
+    build_instruction(instructionList, "JUMPIFEQ", "label_lt", "LF@return_value", "bool@true");
+    build_instruction(instructionList, "GT", "LF@return_value", "LF@char1", "LF@char2");
+    build_instruction(instructionList, "JUMPIFEQ", "label_gt", "LF@return_value", "bool@true");
 
-build_instruction(instructionList, "LABEL", "label_continue", NULL, NULL);
-build_instruction(instructionList, "ADD", "LF@i", "LF@i", "int@1");
-build_instruction(instructionList, "JUMP", "label_loop", NULL, NULL);
+    build_instruction(instructionList, "LABEL", "label_continue", NULL, NULL);
+    build_instruction(instructionList, "ADD", "LF@i", "LF@i", "int@1");
+    build_instruction(instructionList, "JUMP", "label_loop", NULL, NULL);
 
-// End of comparison
-build_instruction(instructionList, "LABEL", "label_end", NULL, NULL);
-build_instruction(instructionList, "STRLEN", "LF@len1", "LF@s1", NULL);
-build_instruction(instructionList, "STRLEN", "LF@len2", "LF@s2", NULL);
-build_instruction(instructionList, "LT", "LF@return_value", "LF@len1", "LF@len2");
-build_instruction(instructionList, "JUMPIFEQ", "label_lt", "LF@return_value", "bool@true");
-build_instruction(instructionList, "GT", "LF@return_value", "LF@len1", "LF@len2");
-build_instruction(instructionList, "JUMPIFEQ", "label_gt", "LF@return_value", "bool@true");
+    // End of comparison
+    build_instruction(instructionList, "LABEL", "label_end", NULL, NULL);
+    build_instruction(instructionList, "STRLEN", "LF@len1", "LF@s1", NULL);
+    build_instruction(instructionList, "STRLEN", "LF@len2", "LF@s2", NULL);
+    build_instruction(instructionList, "LT", "LF@return_value", "LF@len1", "LF@len2");
+    build_instruction(instructionList, "JUMPIFEQ", "label_lt", "LF@return_value", "bool@true");
+    build_instruction(instructionList, "GT", "LF@return_value", "LF@len1", "LF@len2");
+    build_instruction(instructionList, "JUMPIFEQ", "label_gt", "LF@return_value", "bool@true");
 
-// s1 == s2
-build_instruction(instructionList, "MOVE", "LF@return_value", "int@0", NULL);
-build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
-build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+    // s1 == s2
+    build_instruction(instructionList, "MOVE", "LF@return_value", "int@0", NULL);
+    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+    build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
 
-// s1 < s2
-build_instruction(instructionList, "LABEL", "label_lt", NULL, NULL);
-build_instruction(instructionList, "MOVE", "LF@return_value", "int@-1", NULL);
-build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
-build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+    // s1 < s2
+    build_instruction(instructionList, "LABEL", "label_lt", NULL, NULL);
+    build_instruction(instructionList, "MOVE", "LF@return_value", "int@-1", NULL);
+    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+    build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
 
-// s1 > s2
-build_instruction(instructionList, "LABEL", "label_gt", NULL, NULL);
-build_instruction(instructionList, "MOVE", "LF@return_value", "int@1", NULL);
+    // s1 > s2
+    build_instruction(instructionList, "LABEL", "label_gt", NULL, NULL);
+    build_instruction(instructionList, "MOVE", "LF@return_value", "int@1", NULL);
 
-// End
-build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
-build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+    // End
+    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+    build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
 
 }
+
+// function to build instructions for built-in ifj.substring function
 void build_substring(){
     build_instruction(instructionList, "LABEL", "ifj_substring", NULL, NULL);
     build_instruction(instructionList, "DEFVAR", "LF@s1", NULL, NULL);
@@ -260,33 +267,33 @@ void build_substring(){
     build_instruction(instructionList, "DEFVAR", "LF@tmp_length", NULL, NULL);
     build_instruction(instructionList, "DEFVAR", "LF@tmp_char", NULL, NULL);
     build_instruction(instructionList, "DEFVAR", "LF@tmp_cond", NULL, NULL);
-     // Check if i < 0
+    // Check if i < 0
     build_instruction(instructionList, "LT", "LF@return_value", "LF@i", "int@0");
     build_instruction(instructionList, "JUMPIFEQ", "label_null", "LF@return_value", "bool@true");
 
-        // Check if j < 0
+    // Check if j < 0
     build_instruction(instructionList, "LT", "LF@return_value", "LF@j", "int@0");
     build_instruction(instructionList, "JUMPIFEQ", "label_null", "LF@return_value", "bool@true");
 
-        // Check if i > j
+    // Check if i > j
     build_instruction(instructionList, "GT", "LF@return_value", "LF@i","LF@j");
     build_instruction(instructionList, "JUMPIFEQ", "label_null", "LF@return_value", "bool@true");
 
-        // Check if i >= ifj.length(s)
+    // Check if i >= ifj.length(s)
     build_instruction(instructionList, "STRLEN", "LF@tmp_length", "LF@s1", NULL);
     build_instruction(instructionList, "LT", "LF@return_value", "LF@i", "LF@tmp_length");
     build_instruction(instructionList, "NOT", "LF@return_value", "LF@return_value", NULL);
     build_instruction(instructionList, "JUMPIFEQ", "label_null", "LF@return_value", "bool@true");
 
-        // Check if j > ifj.length(s)
+    // Check if j > ifj.length(s)
     build_instruction(instructionList, "GT", "LF@return_value","LF@j", "LF@tmp_length");
     build_instruction(instructionList, "JUMPIFEQ", "label_null", "LF@return_value", "bool@true");
-     // Initialize loop variables
+    // Initialize loop variables
     build_instruction(instructionList, "MOVE", "LF@tmp_i", "LF@i", NULL);
     build_instruction(instructionList, "MOVE", "LF@tmp_j","LF@j", NULL);
     build_instruction(instructionList, "MOVE", "LF@return_value", "string@", NULL);
 
-        // Loop to extract substring
+    // Loop to extract substring
     build_instruction(instructionList, "LABEL", "label_loop", NULL, NULL);
     build_instruction(instructionList, "GETCHAR", "LF@tmp_char", "LF@s1", "LF@tmp_i");
     build_instruction(instructionList, "CONCAT", "LF@return_value", "LF@return_value", "LF@tmp_char");
@@ -294,17 +301,19 @@ void build_substring(){
     build_instruction(instructionList, "LT", "LF@tmp_cond", "LF@tmp_i", "LF@tmp_j");
     build_instruction(instructionList, "JUMPIFEQ", "label_loop", "LF@tmp_cond", "bool@true");
 
-        // End
+    // End
     build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
     build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
 
-        // Null case
+    // Null case
     build_instruction(instructionList, "LABEL", "label_null", NULL, NULL);
     build_instruction(instructionList, "MOVE", "LF@return_value", "nil@nil", NULL);
     build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
     build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
 }
 
+
+// function to convert a string to a ifj24code format
 char* escape_sequence(char *s) {
     char* string_id = "string@";
     int strlength = strlen(s);
@@ -357,7 +366,7 @@ char* escape_sequence(char *s) {
         }
     }
     regfree(&regex);
-	//printf("%s\n", string_id);
+	//printf("%s\n", string_id); //debug print
     return string_id;
 }
 

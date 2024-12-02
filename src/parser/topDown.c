@@ -19,13 +19,15 @@
 
 
 
-// extern const char *tokenName[];
-//extern int intResCounter;
-//Current token pointer
+//Tokenized input + current token index
 Token *all_tokens[100000];
-FrameStack *frameStack;
 int token_index = 0;
+//Frame stack to store declared variables and functions
+FrameStack *frameStack;
+
+
 bool encoutered_main = false;
+//Counters and flags for generating unique labels
 bool encountered_return = false;
 bool encountered_strcmp = false;
 bool encountered_substring = false;
@@ -49,6 +51,7 @@ char *my_strdup(const char *s) {
 void next_token(){
     token_index++;
 }
+//Function to fill the all_tokens array 
 void save_token(Token *current_token){
     Token *token_copy = (Token *)malloc(sizeof(Token));
     if (token_copy == NULL) {
@@ -59,8 +62,9 @@ void save_token(Token *current_token){
     token_index++;
 }
 
+//Funtion to check if the variable type and expression result types are compatible
 TokenType type_compatibility(TokenType variable, TokenType expr_type, bool from_args){
-    ////printf("TYPE COMPAT: %s %s\n", tokenName[variable], tokenName[expr_type]);
+    //printf("TYPE COMPAT: %s %s\n", tokenName[variable], tokenName[expr_type]); // debug print 
     if(expr_type == TOKEN_NULL && variable == TOKEN_EMPTY){
         error_exit(ERR_EXPR_DERIV);
     }
@@ -74,9 +78,9 @@ TokenType type_compatibility(TokenType variable, TokenType expr_type, bool from_
             }
             if(variable == TOKEN_U8_OPT && (expr_type == TOKEN_U8 || expr_type == TOKEN_NULL)){
                 return TOKEN_U8_OPT;
-            } else if(from_args){
+            } else if(from_args){ //Funtion was called from function_call_rule
                 error_exit(ERR_WRONG_PARAM_RET);
-            } else{
+            } else{//Incompatible types
                 error_exit(ERR_EXPR_TYPE);
             }
         }
@@ -85,12 +89,13 @@ TokenType type_compatibility(TokenType variable, TokenType expr_type, bool from_
     }
     return expr_type;
 }
-
+//Helper function for filling the frame stack
 bool is_data_type(TokenType type){
     return type == TOKEN_I32 || type == TOKEN_F64 || type == TOKEN_U8 ||
            type == TOKEN_I32_OPT || type == TOKEN_F64_OPT || type == TOKEN_U8_OPT || type == TOKEN_VOID; 
 }
 
+//Function to add built-in functions to the frame stack
 void add_builtin_functions(FrameStack *frameStack) {
     // Define the built-in functions
     const char *builtin_functions[][5] = {
@@ -166,10 +171,10 @@ TokenType get_token_type(const char *type_str) {
     if (strcmp(type_str, "?[]u8") == 0) return TOKEN_U8_OPT;
     if (strcmp(type_str, "any") == 0) return TOKEN_IDENTIFIER;
     if (strcmp(type_str, "void") == 0) return TOKEN_VOID;
-    // Add other types as needed
     return TOKEN_EMPTY;
 }
 
+//Fucntion that fills the symbol table before parsing the program
 void fill_sym_table_fn(FrameStack *frameStack, int token_index) {
     // Add built-in functions to the frame stack
     static bool builtins_added = false;
@@ -185,7 +190,7 @@ void fill_sym_table_fn(FrameStack *frameStack, int token_index) {
             error_exit(ERR_INTERNAL);
         }
         node->id = NULL;
-        node->type = TOKEN_EMPTY; // Replace with appropriate TokenType
+        node->type = TOKEN_EMPTY; 
         node->fn = false;
         node->t_const = false;
         node->params = NULL;
@@ -201,7 +206,7 @@ void fill_sym_table_fn(FrameStack *frameStack, int token_index) {
                 error_exit(ERR_INTERNAL);
             }
             strcpy(node->id, all_tokens[token_index]->value);
-            //printf("ID: %s\n", node->id);
+            //printf("ID: %s\n", node->id); // debug print
 
             node->fn = true;
             node->t_const = false;
@@ -248,8 +253,10 @@ void fill_sym_table_fn(FrameStack *frameStack, int token_index) {
         token_index++;
     }
 }
+
+//Function to generate instrucion arguments for built-in functions
 char* build_builtin_lit_arg(TokenType param_type, char *param_id, bool from_main){
-    //printf("param_typeeeee: %s :: %s\n", tokenName[param_type], param_id);
+    //printf("param_typeeeee: %s :: %s\n", tokenName[param_type], param_id); // debug print
     switch(param_type){
         case TOKEN_INT:
             return _strcat("int@", param_id);
@@ -269,6 +276,7 @@ char* build_builtin_lit_arg(TokenType param_type, char *param_id, bool from_main
     }
 }
 
+//Funtion to generate a frame prefix
 char* what_frame(bool from_main){
     if(from_main){
         return "GF@";
@@ -277,7 +285,9 @@ char* what_frame(bool from_main){
     }
 }
 
+//Function to generate instructions for built-in functions
 void build_builtin(char *id, int curr_token, char *var_id, bool from_main){
+    // get the parameters of the called built-in function
     Param *params = NULL;
     while(all_tokens[curr_token]->type != TOKEN_RIGHT_BRACKET){
       if(all_tokens[curr_token]->type == TOKEN_IDENTIFIER || is_lit(all_tokens[curr_token]->type)){
@@ -304,10 +314,10 @@ void build_builtin(char *id, int curr_token, char *var_id, bool from_main){
       }
       curr_token += 1;
     }
-    //printf("var_id :: %s\n", id);
-    //printf("mama sdohla\n");
-    //TokenType var_type = search(frameStack, var_id)->type;
-    ////printf("ya ebanat: %s\n", tokenName[params->type]);
+    //printf("var_id :: %s\n", id); // debug print
+    
+   
+    //build the instruction for the built-in function
     if(strcmp(id, "ifj.i2f") == 0){
         build_instruction(instructionList, "INT2FLOAT", _strcat(what_frame(from_main), var_id), build_builtin_lit_arg(params->type, params->id, from_main), NULL);
     } else if(strcmp(id, "ifj.f2i") == 0){
@@ -356,9 +366,10 @@ void build_builtin(char *id, int curr_token, char *var_id, bool from_main){
         encountered_substring = true;
     }
     
-   //print_param_list( "queres ?",params);
+   //print_param_list( "ssss\n",params); // debug print
 }
 
+//Function to generate variable definitons out of the while loop
 void parse_while( bool from_main, int index, bool in_while){
     int nested = 0;
     if(in_while) return;
@@ -373,7 +384,7 @@ void parse_while( bool from_main, int index, bool in_while){
         if(all_tokens[index]->type == TOKEN_EOF){
             syntax_error();
         }
-        //printf("AT: %s\n", all_tokens[index]->value);
+        //printf("AT: %s\n", all_tokens[index]->value); // debug print
         if((all_tokens[index]->type == TOKEN_VAR ||all_tokens[index]->type == TOKEN_CONST) && all_tokens[index+1]->type == TOKEN_IDENTIFIER ){
             build_instruction(instructionList, "DEFVAR", _strcat(what_frame(from_main), all_tokens[index+1]->value), NULL, NULL);
         }
@@ -392,31 +403,28 @@ void syntax_error(){
     error_exit(ERR_SYNTAX);
 }
 
-//i think we'll be handling comments in the expect function
+
 //Compare current token type and expected token type. Get the next token if they match.
 void skip_comments(){
    
     while(all_tokens[token_index]->type == TOKEN_COMMENT){
-        //printf("Skipping comment\n");
+        //printf("Skipping comment\n"); // debug print
         next_token();
     }
 }
 void expect(TokenType type){
-    ////printf("Checking: type: %s val: %s\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value);
     //if we get a comment we skip it and get the next token
     skip_comments();
-    //printf("Checking: type: %s val: %s\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value);
     if(all_tokens[token_index]->type == type){
         next_token();
     } else {
-        //printf("Expected: %s\n", tokenName[type]);
+        //printf("Expected: %s\n", tokenName[type]); // debug print
         syntax_error();
     }
 }
 
 //Check if the id of token value matches expected one
 void expect_id(char *id_to_check){
-    ////printf("type: %s val: %s id_to_check:%s\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value, id_to_check);
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER && !strcmp(all_tokens[token_index]->value, id_to_check)){
         next_token();
     } else {
@@ -426,8 +434,7 @@ void expect_id(char *id_to_check){
 
 //Check if the string in token matches expected one
 void expect_string(char *string_to_check){
-    ////printf("type: %s val: %s id_to_check:%s\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value, string_to_check);
-    if(all_tokens[token_index]->type == TOKEN_STRING && !strcmp(all_tokens[token_index]->value, string_to_check)){
+   if(all_tokens[token_index]->type == TOKEN_STRING && !strcmp(all_tokens[token_index]->value, string_to_check)){
         next_token();
     } else {
         syntax_error();
@@ -438,7 +445,6 @@ void expect_string(char *string_to_check){
 void program_rule(){
     prologue_rule();
     functions_rule();
-    //main_func_rule();
     expect(TOKEN_EOF);
 }
 // <Prologue> ::= const ifj = @import(“ifj24.zig”) ;
@@ -475,13 +481,14 @@ void function_rule(){
     Node *fn = search(frameStack, all_tokens[token_index]->value);
     build_instruction(instructionList, "LABEL", all_tokens[token_index]->value, NULL, NULL);
     if(strcmp(fn->id, "main") == 0){
+        //declare helper variables for assembly
         build_instruction(instructionList, "DEFVAR", "GF@PAMAGITI", NULL, NULL);
         build_instruction(instructionList, "DEFVAR", "GF@supa_giga_expr_res", NULL, NULL);
     } else {
         build_instruction(instructionList, "DEFVAR", "LF@PAMAGITI", NULL, NULL);
         build_instruction(instructionList, "DEFVAR", "LF@supa_giga_expr_res", NULL, NULL);
     }
-    
+    //generate code for functions
     Param *temp_param = fn->params;
     int i = 0;
     while (temp_param != NULL) {
@@ -497,8 +504,9 @@ void function_rule(){
         param_list_rule();
         return_type_rule();
         block_rule_fn(fn, false);
+        //return check
         if(encountered_return == false && fn->type != TOKEN_VOID){
-            //printf("IN FUNC:   %s\n", fn->id);
+            //printf("IN FUNC:   %s\n", fn->id); // debug print
             error_exit(ERR_MISS_OVERFL_RETURN);
         }
         if(encountered_return == false && fn->type == TOKEN_VOID){
@@ -591,7 +599,7 @@ void base_type_rule(){
     }
 }
 
-// <Return_type> ::= <Optional_question_mark> <Base_type>
+// <Return_type> ::= void | <Base_type>
 void return_type_rule(){
     skip_comments();
     if(all_tokens[token_index]->type == TOKEN_VOID){
@@ -626,10 +634,10 @@ void block_rule_fn(Node *fn, bool from_main){
         temp_param = temp_param->next;
     }
 
-    //printf("entering statements\n");
+    //printf("entering statements\n"); // debug print
     statements_rule(from_main, false);
     expect(TOKEN_RIGHT_BRACE);
-    //printFrameStack(frameStack);
+    //printFrameStack(frameStack); // debug print
     removeFrame(frameStack);
 
 }
@@ -638,10 +646,10 @@ void block_rule(){
     expect(TOKEN_LEFT_BRACE);
     skip_comments();
     add_frame(frameStack);
-    //printf("entering statements\n");
+    //printf("entering statements\n"); // debug print
     statements_rule(false, false);
     expect(TOKEN_RIGHT_BRACE);
-    //printFrameStack(frameStack);
+    //printFrameStack(frameStack); // debug print
     removeFrame(frameStack);
 }
 
@@ -649,10 +657,10 @@ void if_block(bool from_main, int what_else_case){
     expect(TOKEN_LEFT_BRACE);
     skip_comments();
     add_frame(frameStack);
-    //printf("entering statements\n");
+    //printf("entering statements\n"); // debug print
     statements_rule(from_main, false);
     expect(TOKEN_RIGHT_BRACE);
-    //printFrameStack(frameStack);
+    //printFrameStack(frameStack); // debug print
     removeFrame(frameStack);
     if(all_tokens[token_index]->type == TOKEN_ELSE){
         build_instruction(instructionList, "JUMP", _strcat("end_case", itoa(end_case_cnt)), NULL, NULL);
@@ -664,10 +672,10 @@ void else_block(bool from_main){
     expect(TOKEN_LEFT_BRACE);
     skip_comments();
     add_frame(frameStack);
-    //printf("entering statements\n");
+    //printf("entering statements\n"); // debug print
     statements_rule(from_main, false);
     expect(TOKEN_RIGHT_BRACE);
-    //printFrameStack(frameStack);
+    //printFrameStack(frameStack); // debug print
     removeFrame(frameStack);
     build_instruction(instructionList, "LABEL", _strcat("end_case", itoa(end_case_cnt)), NULL, NULL);
     end_case_cnt++;
@@ -676,10 +684,10 @@ void while_block(bool from_main, int what_while_case, int what_while_end_case, E
     expect(TOKEN_LEFT_BRACE);
     skip_comments();
     add_frame(frameStack);
-    //printf("entering statements\n");
+    //printf("entering statements\n"); // debug print
     statements_rule(from_main, in_while);
     expect(TOKEN_RIGHT_BRACE);
-    //printFrameStack(frameStack);
+    //printFrameStack(frameStack); // debug print
     removeFrame(frameStack);
     parse_expression(expr, frameStack, from_main);
     if(all_tokens[pipe_index]->type == TOKEN_PIPE){
@@ -700,7 +708,7 @@ void statements_rule(bool from_main, bool in_while){
         statement_rule(from_main, in_while);
     }
 
-    //printf("exiting statements\n");
+    //printf("exiting statements\n"); // debug print
    
 }
 
@@ -711,19 +719,21 @@ bool is_statement_start(TokenType type){
            type == TOKEN_IF || type == TOKEN_WHILE || type == TOKEN_RETURN || type == TOKEN_IDENTIFIER_FUNC || type == TOKEN_UNDERLINE;
 }
 
+
+// <Statement> ::= <Var_def> | <Assigment> | <Conditionals> | <While_statement> | <Return_statement>
 void statement_rule(bool from_main, bool in_while){
         skip_comments();
         switch (all_tokens[token_index]->type){
         case TOKEN_CONST:
         case TOKEN_VAR:
-            //printf("var\n");
+            //printf("var\n"); // debug print
             var_rule(from_main, in_while);
             break;
         // assigment or function call
         case TOKEN_IDENTIFIER_FUNC:
         case TOKEN_IDENTIFIER:
         case TOKEN_UNDERLINE:
-           // printf("assignment\n");
+           // printf("assignment\n"); // debug print
             assigment_rule(from_main);
             break;
         case TOKEN_IF:
@@ -746,11 +756,12 @@ void statement_rule(bool from_main, bool in_while){
 //<var_def> ::= <Var_mode> id <Var_type> = <Expression> ;
 void var_rule(bool from_main, bool in_while){
     skip_comments();
-    
+    //put the new variable node into symbol table
     Node *variable = (Node *)malloc(sizeof(Node));
     variable->height = 1;
     variable->type = TOKEN_EMPTY;
     variable->used = false;
+    // <Var_mode> ::= const | var
     if(all_tokens[token_index]->type == TOKEN_CONST){
         expect(TOKEN_CONST);
         variable->t_const = true;
@@ -763,6 +774,7 @@ void var_rule(bool from_main, bool in_while){
     }
     variable->fn = false;
     variable->id = all_tokens[token_index]->value;
+    //generate the instruction for the variable definition
     if(!in_while){
         if(from_main){
             build_instruction(instructionList, "DEFVAR", _strcat("GF@", all_tokens[token_index]->value), NULL, NULL);
@@ -785,9 +797,9 @@ void var_rule(bool from_main, bool in_while){
     if(all_tokens[token_index]->type == TOKEN_STRING){
         error_exit(ERR_EXPR_DERIV);
     }
-        //inbuilt function call
+    //inbuilt function call
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
-        //printf("here\n");
+        //printf("here\n"); // debug print
         if(search(frameStack, all_tokens[token_index]->value) == NULL){
             error_exit(ERR_DEFINE);
         }
@@ -797,13 +809,7 @@ void var_rule(bool from_main, bool in_while){
         function_call_rule(variable->id, from_main);
         return;
     }
-    //expression_rule();
-    //дальше пиздец)
-    //  Token *token_copy = (Token *)malloc(sizeof(Token));
-    //     if (token_copy == NULL) {
-    //         error_exit(ERR_INTERNAL);
-    //     }
-    // *token_copy = *all_tokens[token_index];
+   // user defined function call
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER){
         expect(TOKEN_IDENTIFIER);
     }
@@ -818,6 +824,7 @@ void var_rule(bool from_main, bool in_while){
         }
         return;
     }
+    //build the expression for bottomUp parser
     Expression *expr = (Expression *)malloc(sizeof(Expression));
     if(expr == NULL){
         error_exit(ERR_INTERNAL);
@@ -843,17 +850,20 @@ void var_rule(bool from_main, bool in_while){
 	end_token->value = "$";
 	add_element(expr, end_token);
 
-    //print_expression(expr);
+    //print_expression(expr); // debug print
 
     TokenType expr_type = parse_expression(expr, frameStack, from_main);
-    //printf("here\n");
+    //printf("here\n"); // debug print
+    
+    //check if the variable type is compatible with the expression result  
+    //assign the expression result to the variable
     variable->type = type_compatibility(variable->type, expr_type, false);
     if(from_main){
         build_instruction(instructionList, "MOVE", _strcat("GF@", variable->id), "GF@supa_giga_expr_res", NULL);
     } else {
         build_instruction(instructionList, "MOVE", _strcat("LF@", variable->id), "LF@supa_giga_expr_res", NULL);
     }
-    //printf("Variable ID: %s --- Variable type: %s\n", variable->id,tokenName[variable->type]);
+    //printf("Variable ID: %s --- Variable type: %s\n", variable->id,tokenName[variable->type]); // debug print
     add_item(frameStack, variable);
     expect(TOKEN_SEMICOLON);
     skip_comments();
@@ -879,11 +889,12 @@ void assigment_rule(bool from_main){
     } 
     Node *variable = NULL;
 
+
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER){
         expect(TOKEN_IDENTIFIER);
-       // printf("here\n");
+       // printf("here\n"); // debug print
         variable = search(frameStack, all_tokens[token_index-1]->value);
-        //printf("there\n");
+        //printf("there\n"); // debug print
         if(variable == NULL){
             error_exit(ERR_DEFINE);
         }
@@ -897,7 +908,7 @@ void assigment_rule(bool from_main){
 
     //if the identifier was a user function identifier
     if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET && all_tokens[token_index-1]->type == TOKEN_IDENTIFIER){
-        //printf("here\n");
+        //printf("here\n"); // debug print
         if(search(frameStack, all_tokens[token_index-1]->value) != NULL){
             if(variable->type != TOKEN_VOID){
                 error_exit(ERR_WRONG_PARAM_RET);
@@ -905,7 +916,7 @@ void assigment_rule(bool from_main){
         } else{
             error_exit(ERR_DEFINE);
         }
-        //printf("hereeee\n");
+        //printf("hereeee\n"); // debug print
         function_call_rule(NULL, from_main);
         return;
     }
@@ -919,9 +930,9 @@ void assigment_rule(bool from_main){
         }
     }
 
-    //inbuilt function call
+    //inbuilt function call after the assign token
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
-        //printf("here\n");
+        //printf("here\n"); // debug print
         if(search(frameStack, all_tokens[token_index]->value) == NULL){
             error_exit(ERR_DEFINE);
         }
@@ -931,21 +942,14 @@ void assigment_rule(bool from_main){
         if(variable != NULL) {
             type_compatibility(variable->type, expr_type, false);
             set_usage(frameStack, variable->id);
-            //printf("mama sdohla232\n");
             function_call_rule(variable->id, from_main);
             return;
         }
-        //printf("mama sdohla23\n");
         function_call_rule(NULL, from_main);
         return;
     }
-    //expression_rule();
-    //дальше пиздец)
-    //  Token *token_copy = (Token *)malloc(sizeof(Token));
-    //     if (token_copy == NULL) {
-    //         error_exit(ERR_INTERNAL);
-    //     }
-    // *token_copy = *all_tokens[token_index];
+
+    //user defined function call after the assign token
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER){
         if(search(frameStack, all_tokens[token_index]->value) == NULL){
             if(all_tokens[token_index+1]->type == TOKEN_LEFT_BRACKET){
@@ -962,6 +966,7 @@ void assigment_rule(bool from_main){
         type_compatibility(variable->type, expr_type, false);
         set_usage(frameStack, variable->id);
         function_call_rule(variable->id, from_main);
+        //assign the result of the function to the variable
         if(from_main){
             build_instruction(instructionList, "MOVE", _strcat("GF@", variable->id), "TF@return_value", NULL);
         } else {
@@ -969,6 +974,7 @@ void assigment_rule(bool from_main){
         }
         return;
     }
+    //build the expression for bottomUp parser
     Expression *expr = (Expression *)malloc(sizeof(Expression));
     if(expr == NULL){
         error_exit(ERR_INTERNAL);
@@ -992,8 +998,7 @@ void assigment_rule(bool from_main){
 	end_token->type = TOKEN_END;
 	end_token->value = "$";
 	add_element(expr, end_token);
-// //TODO free endtoken
-    //print_expression(expr);
+    //print_expression(expr); // debug print
     TokenType expr_type = parse_expression(expr, frameStack, from_main);
     if(from_main){
         build_instruction(instructionList, "MOVE", _strcat("GF@", variable->id), "GF@supa_giga_expr_res", NULL);
@@ -1004,16 +1009,15 @@ void assigment_rule(bool from_main){
     expect(TOKEN_SEMICOLON);
     skip_comments();
     set_usage(frameStack, variable->id);
-    // free(token_copy);
-    //free_expression(expr);
 }
 
-//<function_call> ::= ( <Arguments> );
+//<function_call> ::= id( <Arguments> );
 void function_call_rule(char *id, bool from_main){
-    //printf("function call\n");
+    //printf("function call\n"); // debug print
     bool builtin = false;
     Node *signature = NULL;
     token_index--;
+    //check if the function is declared
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
         signature = search(frameStack, all_tokens[token_index]->value);
         if(signature == NULL){
@@ -1032,7 +1036,8 @@ void function_call_rule(char *id, bool from_main){
         expect(TOKEN_IDENTIFIER);
     }
     expect(TOKEN_LEFT_BRACKET);
-    //printNode(signature);
+    //printNode(signature); // debug print
+    //if the called function is not a built-in function, generate the frame and the parameters
     if(!builtin){
         build_instruction(instructionList, "CREATEFRAME", NULL, NULL, NULL);
         Param *temp_param = signature->params;
@@ -1043,13 +1048,15 @@ void function_call_rule(char *id, bool from_main){
             temp_param = temp_param->next;
         }
     }
+    //parse the arguments and build the instructions 
     int curr_token = token_index;
     parse_args(signature, token_index, builtin, from_main);
     arguments_rule();    
+    //build instructions for built-in functions
     if(builtin) build_builtin(signature->id, curr_token, id, from_main);
     expect(TOKEN_RIGHT_BRACKET);
     expect(TOKEN_SEMICOLON);
-    //printf("function call end\n");
+    //printf("function call end\n"); // debug print
     if(!builtin){
         build_instruction(instructionList, "DEFVAR", "TF@return_value", NULL, NULL);
         build_instruction(instructionList, "PUSHFRAME", NULL, NULL, NULL);
@@ -1058,6 +1065,7 @@ void function_call_rule(char *id, bool from_main){
     skip_comments();
 }
 
+//function to check if the token type is a literal
 bool is_lit(TokenType type){
     switch(type){
         case TOKEN_INT:
@@ -1069,6 +1077,7 @@ bool is_lit(TokenType type){
             return false;
     }
 }
+//function to convert the literal token type to the corresponding base type
 TokenType convert_from_lit(TokenType type){
     switch(type){
         case TOKEN_INT:
@@ -1081,22 +1090,19 @@ TokenType convert_from_lit(TokenType type){
             return TOKEN_EMPTY;
     }
 }
+//function to check if the token type is a base type that can contain null value
 bool is_optional_type(TokenType type){
-    //printf("TYPE: %s\n", tokenName[type]);
+    //printf("TYPE: %s\n", tokenName[type]); // debug print
     return type == TOKEN_I32_OPT || type == TOKEN_F64_OPT || type == TOKEN_U8_OPT;
 }
 
+//function to check if the parameter list matches the argument list
 void check_param_lists(Param *param, Param *args){
     while (param != NULL || args != NULL) {
         if (param == NULL || args == NULL) {
-            //printf("lol\n");
             error_exit(ERR_WRONG_PARAM_RET); // One list is longer than the other
         }
-        //printf("mama ya soshel s uma param: %s args: %s\n", tokenName[param->type], tokenName[args->type]);
         if(param->type == TOKEN_IDENTIFIER){
-            // if(args->type == TOKEN_I32 || args->type == TOKEN_F64 || args->type == TOKEN_FLOAT_EXP){
-            //     error_exit(ERR_WRONG_PARAM_RET);
-            // }
             param = param->next;
             args = args->next;
             continue;
@@ -1107,7 +1113,6 @@ void check_param_lists(Param *param, Param *args){
             continue;
         }
         if (!type_compatibility(param->type, args->type, true)) {
-            //printf("lol\n");
             error_exit(ERR_WRONG_PARAM_RET); // Types do not match
         }
         param = param->next;
@@ -1115,21 +1120,10 @@ void check_param_lists(Param *param, Param *args){
     }
 }
 
-// void print_param_list(const char *label, Param *head) {
-//     printf("%s: ", label);
-//     Param *current = head;
-//     while (current != NULL) {
-//         printf("%s ", current->id);
-//         printf("%s ", tokenName[current->type]);
-//         current = current->next;
-//     }
-//     printf("\n");
-// }
+//function to generate the instructions for the function arguments
 void build_arg_lit(int i,int index){
-    
     switch(all_tokens[index]->type){
         case TOKEN_INT:
-            //printf("INT\n");
             build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat("int@", all_tokens[index]->value), NULL);
             return;
         case TOKEN_FLOAT:
@@ -1151,19 +1145,19 @@ void build_arg_lit(int i,int index){
     }
 }
 
+//function to parse the function arguments
 void parse_args(Node *signature, int index, bool builtin, bool from_main){
     Param *param = signature->params;
     Param *args = NULL;
     int i = 0;
+    //build the argument list for further comparison with the parameter list
     while(all_tokens[index]->type != TOKEN_RIGHT_BRACKET){
-        //printf("ya ebal\n");
         if(all_tokens[index]->type == TOKEN_EOF){
-            //printf("ya ebal\n");
             syntax_error();
         }
         if(all_tokens[index]->type == TOKEN_IDENTIFIER){
             i++;
-            //printf("ARG ID :: %s, %s, %d\n", tokenName[all_tokens[token_index]->type], all_tokens[token_index]->value, i);
+            //generate the instruction for the variable argument 
             if(!builtin) build_instruction(instructionList, "MOVE", _strcat("TF@param", itoa(i)), _strcat(what_frame(from_main), all_tokens[index]->value), NULL);
             Node *to_check = search(frameStack, all_tokens[index]->value);
             if(to_check == NULL){
@@ -1189,7 +1183,7 @@ void parse_args(Node *signature, int index, bool builtin, bool from_main){
         }  
         if(is_lit(all_tokens[index]->type)){
             i++;
-            //printf("ARG LIT :: %s, %s, %d\n", tokenName[all_tokens[index]->type], all_tokens[index]->value, i);
+            //generate the instruction for the literal argument
             if(!builtin) build_arg_lit(i, index);
             Param *new_param = (Param *)malloc(sizeof(Param));
             if(new_param == NULL){
@@ -1214,8 +1208,6 @@ void parse_args(Node *signature, int index, bool builtin, bool from_main){
         }
         index++;
     }
-    //  print_param_list("Signature", signature->params);
-    //  print_param_list("Arguments", args);
     check_param_lists(param, args);
 }
 
@@ -1270,13 +1262,11 @@ void literal_rule(){
 }
 
 //<Conditionals> ::= if ( Expression ) <Optional_null> <Block> <Optional_else>
-//TODO: add from_main flag as parameter
 void conditionals_rule(bool from_main){
     skip_comments();
     expect(TOKEN_IF);
     expect(TOKEN_LEFT_BRACKET);
-    //заглушка
-    //printf("conditionals\n");
+    //build the expression for bottomUp parser
     Expression *expr = (Expression *)malloc(sizeof(Expression));
     if(expr == NULL){
         error_exit(ERR_INTERNAL);
@@ -1293,11 +1283,6 @@ void conditionals_rule(bool from_main){
             set_usage(frameStack, all_tokens[token_index]->value);
         }
         if(all_tokens[token_index]->type == TOKEN_RIGHT_BRACKET){
-            // Token *token_copy = (Token *)malloc(sizeof(Token));
-            // if (token_copy == NULL) {
-            //     error_exit(ERR_INTERNAL);
-            // }
-            // *token_copy = *all_tokens[token_index];
             expect(TOKEN_RIGHT_BRACKET);
             if(all_tokens[token_index]->type == TOKEN_LEFT_BRACE || all_tokens[token_index]->type == TOKEN_PIPE){
                 break;
@@ -1314,9 +1299,9 @@ void conditionals_rule(bool from_main){
 	end_token->type = TOKEN_END;
 	end_token->value = "$";
 	add_element(expr, end_token);
-    //print_expression(expr);
     TokenType id_w_null = parse_expression(expr, frameStack, from_main);
     else_case_cnt++;
+    //case of "if" with optional null
     if(all_tokens[token_index]->type == TOKEN_PIPE){
         build_instruction(instructionList, "MOVE", _strcat(what_frame(from_main), "PAMAGITI"), _strcat(what_frame(from_main), "supa_giga_expr_res"), NULL);
         build_instruction(instructionList, "TYPE", _strcat(what_frame(from_main), "supa_giga_expr_res"), _strcat(what_frame(from_main), "supa_giga_expr_res"), NULL);
@@ -1329,6 +1314,7 @@ void conditionals_rule(bool from_main){
     optional_else_rule(from_main);
     skip_comments();
 }
+//Function to convert the optional type to the corresponding base type
 TokenType convert_from_opt(TokenType type){
     switch(type){
         case TOKEN_I32_OPT:
@@ -1347,6 +1333,7 @@ void optional_null_rule(TokenType id_w_null, bool from_main, bool in_while){
     skip_comments();
    if(all_tokens[token_index]->type == TOKEN_PIPE){
        expect(TOKEN_PIPE);
+       //create the variable with the type that cannot contain null value and put it into symbol table
        Node *variable = (Node *)malloc(sizeof(Node));
         variable->height = 1;
         variable->t_const = false;
@@ -1376,7 +1363,6 @@ void optional_else_rule(bool from_main){
 void else_body_rule(bool from_main){
     skip_comments();
     if(all_tokens[token_index]->type == TOKEN_LEFT_BRACE){
-        //printf("else block\n");
         skip_comments();
         else_block(from_main);
         skip_comments();
@@ -1385,19 +1371,16 @@ void else_body_rule(bool from_main){
         conditionals_rule(from_main);
         skip_comments();
     } else {
-        //printf("else body error\n");
         syntax_error();
     }
 }
 
 //<while_statement> ::= while ( Expression ) <Optional_null> <Block>
-// flag in_while to block DEFVARS in var_rule
 void while_statement_rule(bool from_main, bool in_while){
-    //printf("while\n");
     skip_comments();
     expect(TOKEN_WHILE);
     expect(TOKEN_LEFT_BRACKET);
-    //expression_rule();
+    // build the expression for bottomUp parser
     Expression *expr = (Expression *)malloc(sizeof(Expression));
     if(expr == NULL){
         error_exit(ERR_INTERNAL);
@@ -1414,11 +1397,6 @@ void while_statement_rule(bool from_main, bool in_while){
             set_usage(frameStack, all_tokens[token_index]->value);
         }
         if(all_tokens[token_index]->type == TOKEN_RIGHT_BRACKET){
-            // Token *token_copy = (Token *)malloc(sizeof(Token));
-            // if (token_copy == NULL) {
-            //     error_exit(ERR_INTERNAL);
-            // }
-            // *token_copy = *all_tokens[token_index];
             expect(TOKEN_RIGHT_BRACKET);
             if(all_tokens[token_index]->type == TOKEN_LEFT_BRACE || all_tokens[token_index]->type == TOKEN_PIPE){
                 break;
@@ -1435,10 +1413,10 @@ void while_statement_rule(bool from_main, bool in_while){
 	end_token->type = TOKEN_END;
 	end_token->value = "$";
 	add_element(expr, end_token);
-    //print_expression(expr);
     TokenType id_w_null = parse_expression(expr, frameStack, from_main);
-    //expect(TOKEN_RIGHT_BRACKET);
+    //generate the variable definitions out of the loop 
     parse_while(from_main, token_index, in_while);
+    //generate the label and jumps for the while loop
     in_while = true;
     while_end_case_cnt++;
     int pipe_index = token_index;
@@ -1467,7 +1445,9 @@ void return_statement_rule(bool from_main){
     skip_comments();
     expect(TOKEN_RETURN); 
     encountered_return = true;
+    //special tree node to check semantics of return statement
     Node *return_node = search(frameStack, "$return$");
+    //return in the void function
     if(all_tokens[token_index]->type == TOKEN_SEMICOLON){
         expect(TOKEN_SEMICOLON);
         if(!from_main){
@@ -1475,14 +1455,15 @@ void return_statement_rule(bool from_main){
             build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
             return;
         }
+        //generate the exit instruction at the end of main function
         build_instruction(instructionList, "EXIT", "int@0", NULL, NULL);
         return;
     }
     if(return_node->type == TOKEN_VOID){
         error_exit(ERR_MISS_OVERFL_RETURN);
     }
+    //inbuilt function call
     if(all_tokens[token_index]->type == TOKEN_IDENTIFIER_FUNC){
-        //printf("here\n");
         if(search(frameStack, all_tokens[token_index]->value) == NULL){
             
             error_exit(ERR_DEFINE);
@@ -1506,10 +1487,9 @@ void return_statement_rule(bool from_main){
         set_usage(frameStack, all_tokens[token_index]->value);
         expect(TOKEN_IDENTIFIER);
     }
+    //user defined function call
     if(all_tokens[token_index]->type == TOKEN_LEFT_BRACKET && all_tokens[token_index-1]->type == TOKEN_IDENTIFIER){
-        //printf("here\n");
         TokenType expr_type = search(frameStack, all_tokens[token_index-1]->value)->type;
-        //printf("there\n");
         type_compatibility(return_node->type, expr_type,false);
         function_call_rule(NULL, from_main);
         build_instruction(instructionList, "MOVE", "LF@return_value", "TF@return_value", NULL);
@@ -1517,6 +1497,7 @@ void return_statement_rule(bool from_main){
         build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
         return;
     }
+    //build the expression for bottomUp parser
     Expression *expr = (Expression *)malloc(sizeof(Expression));
     if(expr == NULL){
         error_exit(ERR_INTERNAL);
@@ -1543,9 +1524,6 @@ void return_statement_rule(bool from_main){
 	end_token->type = TOKEN_END;
 	end_token->value = "$";
 	add_element(expr, end_token);
-// //TODO free endtoken
-    //build_instruction(instructionList, "DEFVAR", "LF@supa_giga_expr_res", NULL, NULL);
-    //print_expression(expr);
     TokenType expr_type = parse_expression(expr, frameStack, from_main);
     type_compatibility(return_node->type, expr_type,false);
 
@@ -1566,7 +1544,6 @@ int main(){
         save_token(current_token);
     }
     token_index = 0;
-    //init frame stack :)
     frameStack = init_frameStack();
     add_frame(frameStack);
     fill_sym_table_fn(frameStack, token_index);
@@ -1589,9 +1566,6 @@ int main(){
      } else{
         syntax_error();
      }
-    //printFrameStack(frameStack);
-     //free(current_token->value);
-     //free(current_token);
     
     return 0;
  }
