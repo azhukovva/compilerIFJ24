@@ -1,5 +1,20 @@
+/**
+* @file symTable.c
+ * IFJ24 Compiler
+ *
+ * @brief This file contains the implementation of the symbol table used in the IFJ24 compiler.
+ *        It includes functions for initializing the frame stack, adding and searching for symbols,
+ *        managing the AVL tree for balanced lookups, and handling scope management with frames.
+ *
+ * @authors
+ *          Zhdanovich Iaroslav (xzhdan00)
+ *          Denys Malytskyi (xmalytd00)
+ */
+
 #include "symTable.h"
 
+
+// Function to initialize the frame stack
 FrameStack *init_frameStack(){
     FrameStack *new_frameStack = (FrameStack *)malloc(sizeof(FrameStack));
     if (new_frameStack == NULL) {
@@ -9,8 +24,10 @@ FrameStack *init_frameStack(){
     return new_frameStack;
 }
 
+
+// Function to add a new frame to the frame stack
 void add_frame(FrameStack *frameStack){
-    //printf("Adding frame\n");   
+    //printf("Adding frame\n"); // db purposes only
     framePtr new_frame = (framePtr)malloc(sizeof(struct Frame));
     if (new_frame == NULL) {
         error_exit(ERR_INTERNAL);
@@ -150,7 +167,7 @@ Node *searchNode(Node *root, const char *id) {
 }
 
 Node *search(FrameStack *frameStack, const char *id) {
-   //printf("Searching for %s\n", id);  
+   //printf("Searching for %s\n", id); // db purposes only
     if (frameStack->top == NULL) {
         return NULL; // Empty stack or tree
     }
@@ -184,6 +201,7 @@ void printParams(Param *params) {
     }
 }
 
+// Function to print a node for db purposes
 void printNode(Node *node) {
     if (node != NULL) {
         printf("ID: %s, Type: %s, Const: %s, Function: %s, Used: %s, Height: %d\n",
@@ -206,6 +224,8 @@ void printInOrder(Node *root) {
     }
 }
 
+
+// Function to print the whole frame stack for db purposes
 void printFrameStack(FrameStack *frameStack) {
     framePtr current = frameStack->top;
     while (current != NULL) {
@@ -220,10 +240,8 @@ void removeFrame(FrameStack *frameStack) {
     if (frameStack->top == NULL) {
         return;
     }
-   // framePtr temp = frameStack->top;
    check_used_flag(frameStack->top->root);
     frameStack->top = frameStack->top->nextFrame;
-   // free(temp)
 }
 void set_usage(FrameStack *frameStack, const char *id){
     Node *node = search(frameStack, id);

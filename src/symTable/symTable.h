@@ -1,3 +1,18 @@
+/**
+* @file symTable.h
+ * IFJ24 Compiler
+ *
+ * @brief Header file for the symbol table implementation. It contains type definitions and function
+ *        declarations for managing the symbol table, including operations for adding, searching,
+ *        and removing symbols, as well as handling the frame stack for different scopes. The symbol
+ *        table is implemented as an AVL tree to ensure balanced and efficient lookups.
+ *
+ * @authors
+ *          Zhdanovich Iaroslav (xzhdan00)
+ *          Denys Malytskyi (xmalytd00)
+ */
+
+
 #ifndef SYMTABLE_H
 #define SYMTABLE_H
 

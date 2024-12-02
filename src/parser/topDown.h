@@ -1,3 +1,20 @@
+/**
+* @file topDown.h
+ * IFJ24 Compiler
+ *
+ * @brief Header file for the top-down parser implementation. It contains function declarations
+ *        for parsing the program structure, handling various token types, and generating
+ *        intermediate code for operations. The parser supports function definitions, variable
+ *        declarations, control flow statements, and expression evaluations.
+ *
+ * @details This file provides the interface for the top-down parser functions, including
+ *          functions for parsing tokens in a top-down manner, ensuring correct syntax and
+ *          semantic analysis, and and generates the IFJ24code instructions.
+ *
+ * @authors Zhdanovich Iaroslav (xzhdan00)
+ *          Denys Malytskyi (xmalytd00)
+ */
+
 #ifndef TOPDOWN_H
 #define TOPDOWN_H
 #include "../lexer/scanner.h"

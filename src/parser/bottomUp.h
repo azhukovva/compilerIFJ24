@@ -1,3 +1,20 @@
+/**
+* @file bottomUp.h
+ * IFJ24 Compiler
+ *
+ * @brief Header file for the bottom-up parser implementation. It contains function declarations
+ *        for parsing expressions using shift-reduce parsing, handling various token types, and
+ *        managing the precedence rules. The parser supports arithmetic, relational, and equality
+ *        operations, as well as handling parentheses and different token types.
+ *
+ * @details This file provides the interface for the bottom-up parser functions, including
+ *          functions for shifting tokens onto the stack, reducing the stack based on grammar
+ *          rules, and generating intermediate code for operations.
+ *
+ * @authors Zhdanovich Iaroslav (xzhdan00)
+ *          Denys Malytskyi (xmalytd00)
+ */
+
 #ifndef BOTTOMUP_H
 #define BOTTOMUP_H
 

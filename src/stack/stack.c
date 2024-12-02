@@ -1,3 +1,16 @@
+/**
+* @file stack.c
+ * IFJ24 Compiler
+ *
+ * @brief This file contains the implementation of a stack data structure used in the IFJ24 compiler.
+ *        It includes functions for initializing the stack, pushing and popping elements, checking
+ *        the top element, freeing the stack, and printing the stack contents.
+ *
+ * @authors
+ *          Zhdanovich Iaroslav (xzhdan00)
+ *          Denys Malytskyi (xmalytd00)
+ */
+
 #include "stack.h"
 
 void init_stack(Stack *stack) {

@@ -1,3 +1,22 @@
+/**
+* @file generator.c
+ * IFJ24 Compiler
+ *
+ * @brief This file contains the implementation of the code generator used in the IFJ24 compiler.
+ *        It includes functions for initializing the instruction list, building and pushing instructions,
+ *        and printing the instruction list. Additionally, it provides utility functions for string
+ *        manipulation and escape sequence handling.
+ *
+ * @details The code generator is responsible for generating intermediate code instructions for the
+ *          IFJ24 compiler. It supports operations for creating and managing instructions, handling
+ *          string operations, and generating specific functions like string comparison and substring
+ *          extraction.
+ *
+ * @authors
+ *          Zhdanovich Iaroslav (xzhdan00)
+ *          Denys Malytskyi (xmalytd00)
+ */
+
 #include "generator.h"
 #include <string.h>
 #include <regex.h>

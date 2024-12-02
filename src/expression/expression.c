@@ -1,3 +1,17 @@
+/**
+* @file expression.c
+ * IFJ24 Compiler
+ *
+ * @brief Implementation file for the expression handling functions. It contains the definitions of
+ *        functions for initializing expressions, adding elements to expressions, freeing expressions,
+ *        and printing expressions for debugging purposes. The `Expression` datatype is implemented
+ *        as a linked list, where `ExpElement` represents a node in the list.
+ *
+ * @authors
+ *          Zhdanovich Iaroslav (xzhdan00)
+ *          Denys Malytskyi (xmalytd00)
+ */
+
 #include "expression.h"
     #include "../parser/bottomUp.h"
 #include "../lexer/scanner.h"
@@ -45,6 +59,7 @@ void free_expression(Expression *expression) {
     expression->currentLength = 0;
 }
 
+// Function for printing the expression for debugging purposes
 void print_expression(Expression *expression) {
     ExpElementPtr current = expression->firstElement;
     printf("---EXPRESSION---\n");

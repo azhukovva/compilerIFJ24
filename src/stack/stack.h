@@ -1,3 +1,16 @@
+/**
+* @file stack.h
+ * IFJ24 Compiler
+ *
+ * @brief Header file for the stack data structure implementation. It contains type definitions
+ *        and function declarations for initializing the stack, pushing and popping elements,
+ *        checking the top element, freeing the stack, and printing the stack contents.
+ *
+ * @authors
+ *          Zhdanovich Iaroslav (xzhdan00)
+ *          Denys Malytskyi (xmalytd00)
+ */
+
 #ifndef STACK_H
 #define STACK_H
 

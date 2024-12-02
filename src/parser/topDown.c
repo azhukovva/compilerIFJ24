@@ -1,3 +1,20 @@
+/**
+ * @file topDown.c
+ * IFJ24 Compiler
+ *
+ * @brief This file contains the implementation of the top-down parser for the IFJ24 compiler.
+ *        It includes functions for parsing the program structure, handling various token types,
+ *        and generating intermediate code for operations. The parser supports function definitions,
+ *        variable declarations, control flow statements, and expression evaluations.
+ *
+ * @details The parser processes tokens in a top-down manner, starting from the highest-level
+ *          constructs and breaking them down into smaller components. It ensures correct syntax
+ *          and semantic analysis, and generates the IFJ24code instructions.
+ *
+ * @authors Zhdanovich Iaroslav (xzhdan00)
+ *          Denys Malytskyi (xmalytd00)
+ */
+
 #include "topDown.h"
 
 
