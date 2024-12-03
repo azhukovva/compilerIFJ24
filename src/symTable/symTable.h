@@ -47,16 +47,32 @@ typedef struct {
 } FrameStack;
 
 FrameStack *init_frameStack();
+
+// Function to add a new frame to the frame stack
 void add_frame(FrameStack *frameStack);
+
+// Function to add a new item to the frame stack
 void add_item(FrameStack *frameStack, Node *node);
+
+// Function to convert function parameter to a tree node
 void add_item_fn(FrameStack *frameStack, Param *param);
+
+// Function to search for a node by id in the AVL tree
 Node *search(FrameStack *frameStack, const char *id);
+
+// Function to search for a node by id in the AVL tree at the top of the frame stack
 Node *searchTop(FrameStack *frameStack, const char *id);
+
+
 void printInOrder(Node *root);
 void printNode(Node *node);
 void printFrameStack(FrameStack *frameStack);
 void removeFrame(FrameStack *frameStack);
+
+// Funtction to set the used flag of a node to true
 void set_usage(FrameStack *frameStack, const char *id);
+
+// Function to check if a node is used
 void check_used_flag(Node *root);
 void printNode(Node *node);
 

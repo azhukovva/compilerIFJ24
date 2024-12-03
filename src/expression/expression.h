@@ -32,6 +32,8 @@ typedef struct {
 } Expression;
 
 void init_expression(Expression *expression);
+
+// Function to add a new element to the expression
 void add_element(Expression *expression, Token *token);
 void free_expression(Expression *expression);
 void print_expression(Expression *expression);

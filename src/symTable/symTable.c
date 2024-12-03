@@ -14,6 +14,7 @@
 #include "symTable.h"
 
 
+
 // Function to initialize the frame stack
 FrameStack *init_frameStack(){
     FrameStack *new_frameStack = (FrameStack *)malloc(sizeof(FrameStack));
@@ -67,6 +68,7 @@ Node *rotateRight(Node *y) {
     updateHeight(y);
     updateHeight(x);
 
+
     return x;
 }
 
@@ -84,9 +86,10 @@ Node *rotateLeft(Node *x) {
     return y;
 }
 
+
 // Rebalance the tree
 Node *rebalance(Node *node) {
-    updateHeight(node);
+    //updateHeight(node);
     int balance = getBalance(node);
 
     // Left heavy
@@ -119,7 +122,7 @@ Node *insertNode(Node *node, Node *new_node) {
     } else {
         error_exit(ERR_DEFINE); // Duplicate id
     }
-
+    updateHeight(node);
     return rebalance(node);
 }
 

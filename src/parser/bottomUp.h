@@ -41,7 +41,7 @@ void reduce(Stack *stack, FrameStack *frameStack, bool from_main);
 // Function to shift a token onto the stack
 void shift(Stack *stack, Token *token);
 
-// Function to reduce the stack based on the grammar rules
+// Function to process a reduce action
 void stack_reduce(Stack *stack, char *result, bool from_main);
 
 // Function to check for operand types and return the result type for relational operations (<, >, <=, >=)

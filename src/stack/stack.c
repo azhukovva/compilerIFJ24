@@ -35,7 +35,7 @@ Token *pop(Stack *stack) {
     StackElementPtr topElement = stack->top;
     Token *token = topElement->data;
     stack->top = topElement->nextElement;
-    //free(topElement);
+    
     return token;
 }
 
