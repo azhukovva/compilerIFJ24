@@ -1,0 +1,109 @@
+.IFJcode24 
+JUMP main 
+LABEL main 
+DEFVAR GF@PAMAGITI 
+DEFVAR GF@supa_giga_expr_res 
+DEFVAR GF@str1 
+MOVE GF@str1 string@Toto\032je\032text\032v\032programu\032jazyka\032IFJ24 
+DEFVAR GF@str2 
+MOVE GF@str2 string@,\032ktery\032jeste\032trochu\032obohatime 
+CONCAT GF@str2 GF@str1 GF@str2 
+WRITE GF@str1 
+WRITE string@\010 
+WRITE GF@str2 
+WRITE string@\010 
+WRITE string@Zadejte\032serazenou\032posloupnost\032malych\032pismen\032a-h:\010 
+DEFVAR GF@newInput 
+READ GF@newInput string 
+DEFVAR GF@all 
+MOVE GF@all string@ 
+MOVE GF@supa_giga_expr_res GF@newInput 
+DEFVAR GF@abcdefgh 
+DEFVAR GF@strcmpResult 
+DEFVAR GF@inpOK 
+MOVE GF@PAMAGITI GF@supa_giga_expr_res 
+TYPE GF@supa_giga_expr_res GF@supa_giga_expr_res 
+JUMPIFEQ while_end_case_1 GF@supa_giga_expr_res string@nil 
+DEFVAR GF@$tmp1 
+LABEL while_case_1 
+MOVE GF@inpOK GF@PAMAGITI 
+MOVE GF@abcdefgh string@abcdefgh 
+CREATEFRAME 
+DEFVAR TF@param1 
+MOVE TF@param1 GF@inpOK 
+DEFVAR TF@param2 
+MOVE TF@param2 GF@abcdefgh 
+DEFVAR TF@return_value 
+PUSHFRAME 
+CALL ifj_strcmp 
+MOVE GF@strcmpResult TF@return_value 
+EQ GF@$tmp1 GF@strcmpResult int@0 
+MOVE GF@supa_giga_expr_res GF@$tmp1 
+JUMPIFEQ else_case1 GF@supa_giga_expr_res bool@false 
+WRITE string@Spravne\032zadano!\010 
+WRITE GF@all 
+MOVE GF@supa_giga_expr_res nil@nil 
+MOVE GF@newInput GF@supa_giga_expr_res 
+JUMP end_case0 
+LABEL else_case1 
+WRITE string@Spatne\032zadana\032posloupnost,\032zkuste\032znovu:\010\001 
+CONCAT GF@all GF@all GF@inpOK 
+READ GF@newInput string 
+LABEL end_case0 
+MOVE GF@supa_giga_expr_res GF@newInput 
+MOVE GF@PAMAGITI GF@supa_giga_expr_res 
+TYPE GF@supa_giga_expr_res GF@supa_giga_expr_res 
+JUMPIFNEQ while_case_1 GF@supa_giga_expr_res string@nil 
+LABEL while_end_case_1 
+EXIT int@0 
+LABEL ifj_strcmp 
+DEFVAR LF@s1 
+DEFVAR LF@s2 
+DEFVAR LF@i 
+DEFVAR LF@char1 
+DEFVAR LF@char2 
+DEFVAR LF@len1 
+DEFVAR LF@len2 
+DEFVAR LF@cond 
+MOVE LF@s1 LF@param1 
+MOVE LF@s2 LF@param2 
+MOVE LF@i int@0 
+LABEL label_loop 
+STRLEN LF@len1 LF@s1 
+STRLEN LF@len2 LF@s2 
+LT LF@cond LF@i LF@len1 
+JUMPIFEQ label_end LF@cond bool@false 
+LT LF@cond LF@i LF@len2 
+JUMPIFEQ label_end LF@cond bool@false 
+GETCHAR LF@char1 LF@s1 LF@i 
+GETCHAR LF@char2 LF@s2 LF@i 
+EQ LF@cond LF@char1 LF@char2 
+JUMPIFEQ label_continue LF@cond bool@true 
+LT LF@return_value LF@char1 LF@char2 
+JUMPIFEQ label_lt LF@return_value bool@true 
+GT LF@return_value LF@char1 LF@char2 
+JUMPIFEQ label_gt LF@return_value bool@true 
+LABEL label_continue 
+ADD LF@i LF@i int@1 
+JUMP label_loop 
+LABEL label_end 
+STRLEN LF@len1 LF@s1 
+STRLEN LF@len2 LF@s2 
+LT LF@return_value LF@len1 LF@len2 
+JUMPIFEQ label_lt LF@return_value bool@true 
+GT LF@return_value LF@len1 LF@len2 
+JUMPIFEQ label_gt LF@return_value bool@true 
+MOVE LF@return_value int@0 
+POPFRAME 
+RETURN 
+
+LABEL label_lt 
+MOVE LF@return_value int@-1 
+POPFRAME 
+RETURN 
+
+LABEL label_gt 
+MOVE LF@return_value int@1 
+POPFRAME 
+RETURN 
+

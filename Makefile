@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -I./
+CFLAGS = -Wall -Wextra -std=c99 -pedantic -I./
 
 # Directories
 LEXER_DIR = src/lexer
@@ -18,11 +18,9 @@ OBJ_DIR = obj
 SRCS = $(LEXER_DIR)/scanner.c \
        $(DYNAMIC_STRING_DIR)/dynamicString.c \
        $(ERRORS_DIR)/error.c \
-       $(PARSER_DIR)/parser.c \
        $(PARSER_DIR)/topDown.c \
        $(PARSER_DIR)/bottomUp.c \
        $(STACK_DIR)/stack.c \
-       $(SYMBOL_TABLE_DIR)/fillSymTable.c \
        $(SYMBOL_TABLE_DIR)/symTable.c \
        $(GENERATOR_DIR)/generator.c \
        $(EXPRESSION_DIR)/expression.c

@@ -67,12 +67,55 @@ void print_instruction(Instruction *instruction) {
 
 void print_instruction_list(InstructionList *il) {
     Instruction *current = il->head;
+    Instruction *while_start = NULL;
+    bool ignoreDefvar = false;
+    char *while_case = NULL;
+
     while (current != NULL) {
+        if (!ignoreDefvar && !strcmp(current->opcode, "LABEL") && strstr(current->args->value, "while_case_") != NULL) {
+            int i = 11;
+            while_case = (char *)malloc(strlen(current->args->value) - 10);
+            while_case[0] = '\0';
+            while (current->args->value[i] != '\0') {
+                char tmp[2] = {current->args->value[i], '\0'};
+                strcat(while_case, tmp);
+                i++;
+            }
+            while_start = current;
+            char *end_case_label = (char *)malloc(strlen("while_end_case_") + strlen(while_case) + 1);
+            strcpy(end_case_label, "while_end_case_");
+            strcat(end_case_label, while_case);
+            while (!(!strcmp(current->opcode, "LABEL") && (!strcmp(current->args->value, end_case_label)))) {
+                if (!strcmp(current->opcode, "DEFVAR") && strstr(current->args->value, "TF@") == NULL) {
+                    print_instruction(current);
+                    current = current->next;
+                } else {
+                    current = current->next;
+                }
+            }
+            free(end_case_label);
+            current = while_start;
+            ignoreDefvar = true;
+        }
+        if (ignoreDefvar && !strcmp(current->opcode, "DEFVAR") && strstr(current->args->value, "TF@") == NULL) {
+            current = current->next;
+            continue;
+        }
+        if (while_case != NULL) {
+            char *end_case_label = (char *)malloc(strlen("while_end_case_") + strlen(while_case) + 1);
+            strcpy(end_case_label, "while_end_case_");
+            strcat(end_case_label, while_case);
+            if (!strcmp(current->opcode, "LABEL") && (!strcmp(current->args->value, end_case_label))) {
+                ignoreDefvar = false;
+            }
+            free(end_case_label);
+        }
+
         print_instruction(current);
         current = current->next;
     }
+    free(while_case);
 }
-
 char *_strcat(const char *str1, const char *str2) {
     size_t len1 = strlen(str1);
     size_t len2 = strlen(str2);
@@ -119,37 +162,69 @@ void reverse(char *str) {
 }
 
 void build_strcmp(){
-    build_instruction(instructionList, "LABEL", "ifj_strcmp", NULL, NULL);
-    build_instruction(instructionList, "DEFVAR", "LF@s1", NULL, NULL);
-    build_instruction(instructionList, "DEFVAR", "LF@s2", NULL, NULL);
-    build_instruction(instructionList, "MOV", "LF@s1", "LF@param1", NULL);
-    build_instruction(instructionList, "MOV", "LF@s2", "LF@param2", NULL);
-    // Compare s1 < s2
-    build_instruction(instructionList, "LT", "LF@return_value", "LF@s1", "LF@s2");
-    build_instruction(instructionList, "JUMPIFEQ", "label_lt", "LF@return_value", "bool@true");
+build_instruction(instructionList, "LABEL", "ifj_strcmp", NULL, NULL);
+build_instruction(instructionList, "DEFVAR", "LF@s1", NULL, NULL);
+build_instruction(instructionList, "DEFVAR", "LF@s2", NULL, NULL);
+build_instruction(instructionList, "DEFVAR", "LF@i", NULL, NULL);
+build_instruction(instructionList, "DEFVAR", "LF@char1", NULL, NULL);
+build_instruction(instructionList, "DEFVAR", "LF@char2", NULL, NULL);
+build_instruction(instructionList, "DEFVAR", "LF@len1", NULL, NULL);
+build_instruction(instructionList, "DEFVAR", "LF@len2", NULL, NULL);
+build_instruction(instructionList, "DEFVAR", "LF@cond", NULL, NULL);
+build_instruction(instructionList, "MOVE", "LF@s1", "LF@param1", NULL);
+build_instruction(instructionList, "MOVE", "LF@s2", "LF@param2", NULL);
+build_instruction(instructionList, "MOVE", "LF@i", "int@0", NULL);
 
-    // Compare s1 > s2
-    build_instruction(instructionList, "GT", "LF@return_value", "LF@s1", "LF@s2");
-    build_instruction(instructionList, "JUMPIFEQ", "label_gt", "LF@return_value", "bool@true");
+// Loop to compare characters
+build_instruction(instructionList, "LABEL", "label_loop", NULL, NULL);
+build_instruction(instructionList, "STRLEN", "LF@len1", "LF@s1", NULL);
+build_instruction(instructionList, "STRLEN", "LF@len2", "LF@s2", NULL);
+build_instruction(instructionList, "LT", "LF@cond", "LF@i", "LF@len1");
+build_instruction(instructionList, "JUMPIFEQ", "label_end", "LF@cond", "bool@false");
+build_instruction(instructionList, "LT", "LF@cond", "LF@i", "LF@len2");
+build_instruction(instructionList, "JUMPIFEQ", "label_end", "LF@cond", "bool@false");
 
-        // s1 == s2
-    build_instruction(instructionList, "MOVE", "LF@return_value", "int@0", NULL);
-    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
-    build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+build_instruction(instructionList, "GETCHAR", "LF@char1", "LF@s1", "LF@i");
+build_instruction(instructionList, "GETCHAR", "LF@char2", "LF@s2", "LF@i");
+build_instruction(instructionList, "EQ", "LF@cond", "LF@char1", "LF@char2");
+build_instruction(instructionList, "JUMPIFEQ", "label_continue", "LF@cond", "bool@true");
 
-        // s1 < s2
-    build_instruction(instructionList, "LABEL", "label_lt", NULL, NULL);
-    build_instruction(instructionList, "MOVE", "LF@return_value", "int@-1", NULL);
-    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
-    build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+build_instruction(instructionList, "LT", "LF@return_value", "LF@char1", "LF@char2");
+build_instruction(instructionList, "JUMPIFEQ", "label_lt", "LF@return_value", "bool@true");
+build_instruction(instructionList, "GT", "LF@return_value", "LF@char1", "LF@char2");
+build_instruction(instructionList, "JUMPIFEQ", "label_gt", "LF@return_value", "bool@true");
 
-        // s1 > s2
-    build_instruction(instructionList, "LABEL", "label_gt", NULL, NULL);
-    build_instruction(instructionList, "MOVE", "LF@return_value", "int@1", NULL);
+build_instruction(instructionList, "LABEL", "label_continue", NULL, NULL);
+build_instruction(instructionList, "ADD", "LF@i", "LF@i", "int@1");
+build_instruction(instructionList, "JUMP", "label_loop", NULL, NULL);
 
-        // End
-    build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
-    build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+// End of comparison
+build_instruction(instructionList, "LABEL", "label_end", NULL, NULL);
+build_instruction(instructionList, "STRLEN", "LF@len1", "LF@s1", NULL);
+build_instruction(instructionList, "STRLEN", "LF@len2", "LF@s2", NULL);
+build_instruction(instructionList, "LT", "LF@return_value", "LF@len1", "LF@len2");
+build_instruction(instructionList, "JUMPIFEQ", "label_lt", "LF@return_value", "bool@true");
+build_instruction(instructionList, "GT", "LF@return_value", "LF@len1", "LF@len2");
+build_instruction(instructionList, "JUMPIFEQ", "label_gt", "LF@return_value", "bool@true");
+
+// s1 == s2
+build_instruction(instructionList, "MOVE", "LF@return_value", "int@0", NULL);
+build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+
+// s1 < s2
+build_instruction(instructionList, "LABEL", "label_lt", NULL, NULL);
+build_instruction(instructionList, "MOVE", "LF@return_value", "int@-1", NULL);
+build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
+
+// s1 > s2
+build_instruction(instructionList, "LABEL", "label_gt", NULL, NULL);
+build_instruction(instructionList, "MOVE", "LF@return_value", "int@1", NULL);
+
+// End
+build_instruction(instructionList, "POPFRAME", NULL, NULL, NULL);
+build_instruction(instructionList, "RETURN", NULL, NULL, NULL);
 
 }
 void build_substring(){
@@ -157,9 +232,9 @@ void build_substring(){
     build_instruction(instructionList, "DEFVAR", "LF@s1", NULL, NULL);
     build_instruction(instructionList, "DEFVAR", "LF@i", NULL, NULL);
     build_instruction(instructionList, "DEFVAR", "LF@j", NULL, NULL);
-    build_instruction(instructionList, "MOV", "LF@s1", "LF@param1", NULL);
-    build_instruction(instructionList, "MOV", "LF@i", "LF@param2", NULL);
-    build_instruction(instructionList, "MOV", "LF@i", "LF@param3", NULL);
+    build_instruction(instructionList, "MOVE", "LF@s1", "LF@param1", NULL);
+    build_instruction(instructionList, "MOVE", "LF@i", "LF@param2", NULL);
+    build_instruction(instructionList, "MOVE", "LF@i", "LF@param3", NULL);
 
     build_instruction(instructionList, "DEFVAR", "LF@tmp_i", NULL, NULL);
     build_instruction(instructionList, "DEFVAR", "LF@tmp_j", NULL, NULL);
@@ -240,6 +315,11 @@ char* escape_sequence(char *s) {
 			i++;
 			continue;
 		}
+        if (strcmp(slash, "\\\"") == 0) {
+		    string_id = _strcat(string_id, "\\034");
+			i++;
+			continue;
+		}
         if (regexec(&regex, &s[i], 1, pmatch, 0) == 0) {
             char hex[3] = {s[i+3], s[i+4], '\0'};
             int decimal = (int)strtol(hex, NULL, 16);
@@ -258,8 +338,7 @@ char* escape_sequence(char *s) {
         }
     }
     regfree(&regex);
-	printf("%s\n", string_id);
+	//printf("%s\n", string_id);
     return string_id;
 }
-
 

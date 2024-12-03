@@ -1,9 +1,9 @@
-pub fn ifj.readstr() ?[]u8 {}
-pub fn ifj.readi32() ?i32 {}
-pub fn ifj.readf64() ?f64 {}
+pub fn ifj.readstr() ?[]u8 {} :)
+pub fn ifj.readi32() ?i32 {} :)
+pub fn ifj.readf64() ?f64 {} :)
 pub fn ifj.write(term : any) void {}
-pub fn ifj.i2f(term ∶ i32) f64 {} 
-pub fn ifj.f2i(term ∶ f64) i32 {}
+pub fn ifj.i2f(term ∶ i32) f64 {} :)
+pub fn ifj.f2i(term ∶ f64) i32 {} :)
 pub fn ifj.length(s : []u8) i32 {}
 pub fn ifj.concat(s1 : []u8, s2 : []u8) []u8 {} 
 pub fn ifj.substring(s : []u8, i : i32, j : i32) ?[]u8 {}

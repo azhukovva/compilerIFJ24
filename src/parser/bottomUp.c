@@ -23,7 +23,7 @@ char precedence_table[14][14] = {
 
 char get_precedence(TokenType stack_top, TokenType input) {
     char result = precedence_table[get_index(stack_top)][get_index(input)];
-    printf("Precedence between '%s' (stack top) and '%s' (input): %c\n", tokenName[stack_top], tokenName[input], result);
+    //printf("Precedence between '%s' (stack top) and '%s' (input): %c\n", tokenName[stack_top], tokenName[input], result);
     return result;
 }
 
@@ -119,7 +119,7 @@ TokenType parse_expression(Expression *expression, FrameStack *frameStack, bool 
 
         // If no terminal token is found, we can't proceed with precedence check
         if (first_terminal_token == NULL) {
-            printf("Error: No terminal token found on the stack.\n");
+            //printf("Error: No terminal token found on the stack.\n");
             //free_stack(&stack);
             return TOKEN_EMPTY;
         }
@@ -137,16 +137,16 @@ TokenType parse_expression(Expression *expression, FrameStack *frameStack, bool 
             // Reduce action: apply reduction
             reduce(&stack, frameStack, from_main);
         } else if (precedence == ' ') {
-            printf("Error: Invalid expression.\n");
+            //printf("Error: Invalid expression.\n");
             //free_stack(&stack);  // Free the stack before exiting
             error_exit(ERR_SYNTAX);
             return TOKEN_EMPTY;
 
         } else if (precedence == 'V') {
             // Handle syntax error if precedence is invalid
-            printf("Expression is valid.\n");
+            //printf("Expression is valid.\n");
             //free_stack(&stack);  // Free the stack before exiting
-            printf("Expression datatype: %s\n", stack.top->data->value);
+            //printf("Expression datatype: %s\n", stack.top->data->value);
 	        build_instruction(instructionList, "MOVE", _strcat(what_frame(from_main), "supa_giga_expr_res"), convert(top(&stack)->value, from_main), NULL);
             if (strstr(stack.top->data->value,"int") != NULL) {
                 if(strcmp(stack.top->data->value,"int?") == 0){
@@ -250,7 +250,10 @@ char *convert(char *value, bool from_main) {
     } else if (isdigit(value[0])) {
         // If it's just a number, add "int@"
         result = _strcat("int@", value);
-    } else {
+    } else if (strcmp(value, "null") == 0) {
+        // If it's "null", add "nil@"
+        result = "nil@nil";
+    } else{
         // Otherwise, it's an identifier, add "LF@"
         result = _strcat(what_frame(from_main), value);
     }
@@ -259,7 +262,7 @@ char *convert(char *value, bool from_main) {
 char *assign_type_frame(Token *topToken, FrameStack *frameStack) {
     Node *node = search(frameStack, topToken->value);
     if (node == NULL) {
-        printf("Error: Variable '%s' not found in the symbol table.\n", topToken->value);
+        //printf("Error: Variable '%s' not found in the symbol table.\n", topToken->value);
         error_exit(ERR_UNDEF_VAR);
     }
     switch (node->type) {
@@ -285,7 +288,7 @@ char *assign_type_frame(Token *topToken, FrameStack *frameStack) {
         case TOKEN_U8_OPT:
             return "u8?";
         default:
-            printf("Error: Invalid type for variable '%s'.\n", topToken->value);
+            //printf("Error: Invalid type for variable '%s'.\n", topToken->value);
             error_exit(ERR_SYNTAX);
             return "-1";
     }
@@ -309,13 +312,14 @@ char *assign_type(Token *topToken) {
         case TOKEN_STRING:
             return "u8Const";
         default:
-            printf("Error: Invalid type for token.\n");
+            //printf("Error: Invalid type for token.\n");
             error_exit(ERR_SYNTAX);
             return "-1";
     }
 }
 
-char* arithmetic(Stack *stack) {
+char* arithmetic(Stack *stack, bool from_main) {
+	char *tempregister;
     Token *left = stack->top->nextElement->nextElement->data;
     Token *right = stack->top->data;
     char *result = NULL;
@@ -336,10 +340,25 @@ char* arithmetic(Stack *stack) {
             } else {
                 result = "int";
             }
-        } else {
-            printf("mama sdohla tri\n");
+        } else if (strstr(right->value, "float") != NULL && strstr(left->value, "int") != NULL) {
+			tempregister = _strcat("$tmp", itoa(intResCounter));
+			intResCounter++;
+			build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->nextElement->nextElement->value, from_main), NULL);
+			stack->top->nextElement->nextElement->value = tempregister;
+			stack->top->nextElement->nextElement->data->value = "float";
+            //printf("mama sdohla tri\n");
             result = "float";
-        }
+        } else if (strstr(left->value, "float") != NULL && strstr(right->value, "int") != NULL) {
+			tempregister = _strcat("$tmp", itoa(intResCounter));
+			intResCounter++;
+			build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->value, from_main), NULL);
+			stack->top->value = tempregister;
+			stack->top->data->value = "float";
+            //printf("mama sdohla tri\n");
+            result = "float";
+		}
         if (strstr(right->value, "Const") != NULL && strstr(left->value, "Const") != NULL) {
             char *temp_result = (char *)malloc(strlen(result) + strlen("Const") + 1);
             if (temp_result == NULL) {
@@ -355,7 +374,8 @@ char* arithmetic(Stack *stack) {
     }
 }
 
-char* eq(Stack *stack) {
+char* eq(Stack *stack, bool from_main) {
+	char *tempregister;
     Token *left = stack->top->nextElement->nextElement->data;
     Token *right = stack->top->data;
     if (((strcmp(right->value, "null") == 0) && (strchr(left->value, '?') != NULL)) ||
@@ -364,16 +384,46 @@ char* eq(Stack *stack) {
         return "int";
     }
     if (strstr(left->value, "Const") != NULL || strstr(right->value, "Const") != NULL){
-        printf("Right: %s, Left: %s\n", right->value, left->value);
+        //printf("Right: %s, Left: %s\n", right->value, left->value);
         if (strstr(left->value, right->value) != NULL) {
             return "int";
         } else if (strstr(right->value, left->value) != NULL){
             return "int";
         } else if ((strcmp(right->value, "floatConstConv") == 0 && strstr(left->value, "int") != NULL) ||
                   (strcmp(left->value, "floatConstConv") == 0 && strstr(right->value, "int") != NULL)) {
-            return "int";
+			if (strcmp(right->value, "floatConstConv") == 0) {
+	            tempregister = _strcat("$tmp", itoa(intResCounter));
+				intResCounter++;
+				build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+				build_instruction(instructionList, "FLOAT2INT", convert(tempregister, from_main), convert(stack->top->value, from_main), NULL);
+				stack->top->value = tempregister;
+				stack->top->data->value = "intConst";
+            } else {
+	            tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "FLOAT2INT", convert(tempregister, from_main), convert(stack->top->nextElement->nextElement->value, from_main), NULL);
+			    stack->top->nextElement->nextElement->value = tempregister;
+			    stack->top->nextElement->nextElement->data->value = "intConst";
+			}
+			return "int";
         } else if ((strstr(right->value, "float") != NULL && strstr(left->value, "int") != NULL) ||
                   (strstr(left->value, "float") != NULL && strstr(right->value, "int") != NULL)) {
+			if (strstr(right->value, "int") != NULL) {
+                tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->value, from_main), NULL);
+			    stack->top->value = tempregister;
+			    stack->top->data->value = "float";
+			} else {
+                tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->nextElement->nextElement->value, from_main), NULL);
+			    stack->top->nextElement->nextElement->value = tempregister;
+			    stack->top->nextElement->nextElement->data->value = "float";
+			}
             return "int";
         } else {
             error_exit(ERR_EXPR_TYPE);
@@ -385,7 +435,8 @@ char* eq(Stack *stack) {
     }
 }
 
-char* relational(Stack *stack) {
+char* relational(Stack *stack, bool from_main) {
+	char *tempregister;
     Token *left = stack->top->nextElement->nextElement->data;
     Token *right = stack->top->data;
     if ((strcmp(right->value, "null") == 0) || (strchr(left->value, '?') != NULL) ||
@@ -394,16 +445,46 @@ char* relational(Stack *stack) {
         return "null";
     }
     if (strstr(left->value, "Const") != NULL || strstr(right->value, "Const") != NULL){
-        printf("Right: %s, Left: %s\n", right->value, left->value);
+        //printf("Right: %s, Left: %s\n", right->value, left->value);
         if (strstr(left->value, right->value) != NULL) {
             return "int";
         } else if (strstr(right->value, left->value) != NULL){
             return "int";
         } else if ((strcmp(right->value, "floatConstConv") == 0 && strstr(left->value, "int") != NULL) ||
                   (strcmp(left->value, "floatConstConv") == 0 && strstr(right->value, "int") != NULL)) {
-            return "int";
+			if (strcmp(right->value, "floatConstConv") == 0) {
+	            tempregister = _strcat("$tmp", itoa(intResCounter));
+				intResCounter++;
+				build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+				build_instruction(instructionList, "FLOAT2INT", convert(tempregister, from_main), convert(stack->top->value, from_main), NULL);
+				stack->top->value = tempregister;
+				stack->top->data->value = "intConst";
+            } else {
+	            tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "FLOAT2INT", convert(tempregister, from_main), convert(stack->top->nextElement->nextElement->value, from_main), NULL);
+			    stack->top->nextElement->nextElement->value = tempregister;
+			    stack->top->nextElement->nextElement->data->value = "intConst";
+			}
+			return "int";
         } else if ((strstr(right->value, "float") != NULL && strstr(left->value, "int") != NULL) ||
                   (strstr(left->value, "float") != NULL && strstr(right->value, "int") != NULL)) {
+			if (strstr(right->value, "int") != NULL) {
+                tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->value, from_main), NULL);
+			    stack->top->value = tempregister;
+			    stack->top->data->value = "float";
+			} else {
+                tempregister = _strcat("$tmp", itoa(intResCounter));
+			    intResCounter++;
+			    build_instruction(instructionList, "DEFVAR", convert(tempregister, from_main), NULL, NULL);
+			    build_instruction(instructionList, "INT2FLOAT", convert(tempregister, from_main), convert(stack->top->nextElement->nextElement->value, from_main), NULL);
+			    stack->top->nextElement->nextElement->value = tempregister;
+			    stack->top->nextElement->nextElement->data->value = "float";
+			}
             return "int";
         } else {
             error_exit(ERR_EXPR_TYPE);
@@ -422,7 +503,7 @@ void reduce(Stack *stack, FrameStack *frameStack, bool from_main) {
     non_terminal->type = TOKEN_E;  // Non-terminal E for expression
     Token *top_token = top(stack)->data;  // Get the top token in the stack
     if (top_token == NULL) {
-        printf("Error: Stack is empty, cannot reduce.\n");
+        //printf("Error: Stack is empty, cannot reduce.\n");
         return;
     }
 
@@ -430,7 +511,7 @@ void reduce(Stack *stack, FrameStack *frameStack, bool from_main) {
      top_token->type == TOKEN_FLOAT || top_token->type == TOKEN_NULL ||
       top_token->type == TOKEN_FLOAT_EXP || top_token->type == TOKEN_STRING) {
         // E -> i
-        printf("Reducing: E -> i\n");
+        //printf("Reducing: E -> i\n");
         if (top_token->type == TOKEN_IDENTIFIER) {
             non_terminal->value = assign_type_frame(top_token, frameStack);
         } else {
@@ -439,81 +520,81 @@ void reduce(Stack *stack, FrameStack *frameStack, bool from_main) {
 		char *tokenval = top_token->value;
         pop(stack);
         push(stack, non_terminal, tokenval);
-        print_stack(stack);
+        //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_PLUS && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E + E
-        printf("Reducing: E -> E + E\n");
-        result = arithmetic(stack);
+        //printf("Reducing: E -> E + E\n");
+        result = arithmetic(stack, from_main);
 		stack_reduce(stack, result, from_main);
-		print_stack(stack);
+		//print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_MINUS && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E - E
-        printf("Reducing: E -> E - E\n");
-        result = arithmetic(stack);
+        //printf("Reducing: E -> E - E\n");
+        result = arithmetic(stack, from_main);
         stack_reduce(stack, result, from_main);
-        print_stack(stack);
+        //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_MULTIPLY && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E * E
-        printf("Reducing: E -> E * E\n");
-        result = arithmetic(stack);
+        //printf("Reducing: E -> E * E\n");
+        result = arithmetic(stack, from_main);
         stack_reduce(stack, result, from_main);
-        print_stack(stack);
+        //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_DIVIDE && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E / E
-        printf("Reducing: E -> E / E\n");
-        result = arithmetic(stack);
+        //printf("Reducing: E -> E / E\n");
+        result = arithmetic(stack, from_main);
         stack_reduce(stack, result, from_main);
-        print_stack(stack);
+        //print_stack(stack);
     }
 	else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_LESS_THAN && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E < E
-        printf("Reducing: E -> E < E\n");
-        result = relational(stack);
+        //printf("Reducing: E -> E < E\n");
+        result = relational(stack, from_main);
         stack_reduce(stack, result, from_main);
-        print_stack(stack);
+        //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_GREATER_THAN && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E > E
-        printf("Reducing: E -> E > E\n");
-        result = relational(stack);
+        //printf("Reducing: E -> E > E\n");
+        result = relational(stack, from_main);
         stack_reduce(stack, result, from_main);
-        print_stack(stack);
+        //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_LESS_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E <= E
-        printf("Reducing: E -> E <= E\n");
-        result = relational(stack);
+        //printf("Reducing: E -> E <= E\n");
+        result = relational(stack, from_main);
         stack_reduce(stack, result, from_main);
-        print_stack(stack);
+        //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_GREATER_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E >= E
-        printf("Reducing: E -> E >= E\n");
-        result = relational(stack);
+        //printf("Reducing: E -> E >= E\n");
+        result = relational(stack, from_main);
         stack_reduce(stack, result, from_main);
-        print_stack(stack);
+        //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E == E
-        printf("Reducing: E -> E == E\n");
-        result = eq(stack);
+        //printf("Reducing: E -> E == E\n");
+        result = eq(stack, from_main);
         stack_reduce(stack, result, from_main);
-        print_stack(stack);
+        //print_stack(stack);
     }
     else if (top_token->type == TOKEN_E && stack->top->nextElement->data->type == TOKEN_NOT_EQUAL && stack->top->nextElement->nextElement->data->type == TOKEN_E) {
         // E -> E != E
-        printf("Reducing: E -> E != E\n");
-        result = eq(stack);
+        //printf("Reducing: E -> E != E\n");
+        result = eq(stack, from_main);
         stack_reduce(stack, result, from_main);
-        print_stack(stack);
+        //print_stack(stack);
     }
 	else if (top_token->type == TOKEN_RIGHT_BRACKET && stack->top->nextElement->data->type == TOKEN_E && stack->top->nextElement->nextElement->data->type == TOKEN_LEFT_BRACKET) {
         // E -> (E)
-        printf("Reducing: E -> (E)\n");
+        //printf("Reducing: E -> (E)\n");
 		Token *non_terminal = malloc(sizeof(Token));
     	non_terminal->type = TOKEN_E;
     	non_terminal->value = stack->top->nextElement->data->value;
@@ -522,15 +603,15 @@ void reduce(Stack *stack, FrameStack *frameStack, bool from_main) {
         pop(stack);
         pop(stack);
         push(stack, non_terminal, val);
-        print_stack(stack);
+        //print_stack(stack);
     } else {
-        printf("Error: Invalid expression.\n");
+        //printf("Error: Invalid expression.\n");
         error_exit(ERR_SYNTAX);
     }
 }
 
 void shift(Stack *stack, Token *token) {
-    printf("Shifting: %s\n", tokenName[token->type]);
+    //printf("Shifting: %s\n", tokenName[token->type]);
     push(stack, token, NULL);  // Push the item onto the stack
-    print_stack(stack);
+    //print_stack(stack);
 }
