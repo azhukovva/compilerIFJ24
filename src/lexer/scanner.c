@@ -773,13 +773,6 @@ void get_token(Token *token)
                 state = sFloat_Exp;
                 break;
             }
-            // REVIEW  крашилось при ; in the end of expression
-            //  if is not a digit and not a whitespace/control character, it's an error
-            //  else if (!is_digit(c) && c > 32){
-            //      printf("Error: %c\n", c);
-            //      error_handler(ERR_LEX, token);
-            //      break;
-            //  }
             else
             {
                 token->type = TOKEN_FLOAT; // get token of float number
@@ -837,19 +830,5 @@ void get_token(Token *token)
         }
     }
 }
-
-// int main()
-// {
-//     Token *token = init_token();
-//     char c;
-//     while ((c = read_char(stdin)) != EOF)
-//     {
-//         ungetc(c, stdin);
-//         get_token(token);
-//         print_token(token);
-//     }
-//     free(token);
-//     return 0;
-// }
 
 #endif
