@@ -124,9 +124,7 @@ Token *init_token()
         printf("Error: malloc failed in init_token\n");
         error_exit(ERR_INTERNAL);
     }
-    // new_token->type = NULL;
     newToken->value = (char *)malloc(MAX_TOKEN_LENGHT * sizeof(char));
-    // new_token->value = NULL;
     return newToken;
 }
 
@@ -189,7 +187,7 @@ bool match_string(const char *target, FILE *input)
     if (fread(string, 1, len, input) == len)
     {
         string[len] = '\0';
-        return strcmp(string, target) == 0; // Returns true if equal
+        return strcmp(string, target) == 0; 
     }
     return false; // Return false if reading fails
 }
@@ -246,7 +244,6 @@ void get_token(Token *token)
         c = read_char(stdin);
         char hex[8];
         int idx = 0;
-        //int counter = 0;
         switch (state)
         {
         case sStart:
@@ -367,7 +364,6 @@ void get_token(Token *token)
                 case '"':
                     state = sLiter;
                     break;
-                    // REVIEW
                 case '/':
                     c = read_char(stdin);
                     if (c == '/')
@@ -548,7 +544,6 @@ void get_token(Token *token)
             {
                 if (is_letter(c) || c == '_' || c == '?')
                     error_handler(ERR_LEX, token);
-                // token->type = TOKEN_INT; //REVIEW
                 token->type = TOKEN_INT;
                 token->value = str.str;
                 isToken = 1;
@@ -606,10 +601,9 @@ void get_token(Token *token)
             }
             int key = is_keyword(str.str); // identificator can be a keyword, we need to check it
             if (key != KEYWORD_CMP_ERR)
-            { // Pokud je to klíčové slovo
+            { 
                 if (c == '?' && (key == TOKEN_I32 || key == TOKEN_F64))
                 {
-                    // Pokud je po klíčovém slově typů `i32` nebo `f64` otazník, jde o `typNil`
                     append_string(&str, c);
                     token->type = key + 1;
                     token->value = str.str;
@@ -618,7 +612,6 @@ void get_token(Token *token)
                 }
                 else
                 {
-                    // není otazník -> normální klíčové slovo
                     ungetc(c, stdin);
                     token->type = key;
                     token->value = str.str;
@@ -626,7 +619,6 @@ void get_token(Token *token)
                     break;
                 }
             }
-            // Kontrola pro jmenný prostor vestavěných funkcí IFJ24 (např. `ifj.write`)
             if (strncmp(str.str, "ifj", 3) == 0)
             {
                 while (isspace(c))
@@ -636,7 +628,7 @@ void get_token(Token *token)
 
                 if (c == '.')
                 {
-                    append_string(&str, c); // Prida tecku
+                    append_string(&str, c);
                     c = read_char(stdin);
 
                     while (isspace(c))
@@ -650,7 +642,6 @@ void get_token(Token *token)
                         c = read_char(stdin);
                     }
                     ungetc(c, stdin);
-                    //printf("IFJ24 function: %s\n", str.str);
                     token->type = TOKEN_IDENTIFIER_FUNC;
                     token->value = str.str;
                     isToken = 1;
@@ -687,7 +678,6 @@ void get_token(Token *token)
                 error_handler(ERR_LEX, token);
                 break;
             }
-            // REVIEW
         case sLiterContent:
             if (c == '"')
             {
@@ -720,7 +710,6 @@ void get_token(Token *token)
             if (c == 'x')
             {
                 state = sHex; // Switch to hex state to process \x escape
-                //counter = 0;  // Reset the counter for hex digits
                 idx = 0;      // Reset the index for hex digits
                 break;
             }
